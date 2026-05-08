@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate-yaml:
+    name: Validate Power Apps YAML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate .pa.yaml syntax
+        run: |
+          # Find all .pa.yaml files and validate each
+          shopt -s globstar nullglob
+          fail=0
+          for f in **/*.pa.yaml; do
+            echo "Validating $f"
+            if ! python3 -c "import yaml,sys; yaml.safe_load(open('$f'))" 2>&1; then
+              echo "::error file=$f::Invalid YAML"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Standards check (naming, version, theme)
+        run: |
+          # Check that every Canvas App folder with App.pa.yaml also has AppVersion
+          fail=0
+          for f in $(find . -name "App.pa.yaml"); do
+            if ! grep -q "AppVersion" "$f"; then
+              echo "::error file=$f::App.pa.yaml missing AppVersion formula"
+              fail=1
+            fi
+          done
+          exit $fail
+
+  build-dotnet:
+    name: Build .NET
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Find .NET solutions
+        id: find
+        run: |
+          slns=$(find src -name "*.sln" 2>/dev/null || true)
+          if [ -z "$slns" ]; then
+            echo "No .NET solutions found — skipping"
+            echo "has_solutions=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_solutions=true" >> "$GITHUB_OUTPUT"
+            echo "solutions=$slns" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Restore + build + test
+        if: steps.find.outputs.has_solutions == 'true'
+        run: |
+          for sln in ${{ steps.find.outputs.solutions }}; do
+            echo "Building $sln"
+            dotnet restore "$sln"
+            dotnet build "$sln" --configuration Release --no-restore
+            dotnet test "$sln" --configuration Release --no-build --verbosity normal
+          done
+
+      - name: Vulnerability scan
+        if: steps.find.outputs.has_solutions == 'true'
+        run: |
+          for sln in ${{ steps.find.outputs.solutions }}; do
+            dotnet list "$sln" package --vulnerable --include-transitive 2>&1 | tee scan.log
+            if grep -E "Critical|High" scan.log; then
+              echo "::error::High or Critical vulnerabilities found in $sln"
+              exit 1
+            fi
+          done
+
+  secrets-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  markdown-lint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v15
+        with:
+          globs: '**/*.md'
+        continue-on-error: true

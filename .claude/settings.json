@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(pac --version)",
+      "Bash(pac auth list)",
+      "Bash(pac org who)",
+      "Bash(dotnet --version)",
+      "Bash(dotnet --list-sdks)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet format:*)",
+      "PowerShell(.\\\\scripts\\\\windows\\\\Test-Environment.ps1)",
+      "PowerShell(.\\\\automation\\\\Test-AppStandards.ps1:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(pac solution import:*)",
+      "Bash(az containerapp update:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /:*)",
+      "Bash(git push --force:*)"
+    ]
+  },
+  "includeCoAuthoredBy": true
+}

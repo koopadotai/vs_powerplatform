@@ -1,0 +1,76 @@
+# =============================================================================
+# Enterprise Power Platform Developer Toolkit — .gitignore
+# =============================================================================
+
+# --- Secrets & Local Config ---
+*.env
+*.env.*
+.env.local
+secrets.json
+appsettings.Development.json
+appsettings.Local.json
+.claude/settings.local.json
+**/local.settings.json
+
+# --- .NET ---
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+.vs/
+*.dll
+*.pdb
+*.exe
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# --- Node / NPM ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# --- Power Platform ---
+*.zip
+!templates/**/*.zip
+*.msapp.tmp
+.canvas-cache/
+**/CanvasManifest.json.bak
+
+# --- Docker ---
+*.log
+docker-compose.override.yml
+
+# --- IDE ---
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.shared.json
+*.swp
+*.swo
+
+# --- OS ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+$RECYCLE.BIN/
+
+# --- Build / CI artifacts ---
+artifacts/
+publish/
+out/
+dist/
+
+# --- Power Platform CLI ---
+.pac/
+
+# --- Temporary files ---
+*.tmp
+*.bak
+*.backup
+~$*
