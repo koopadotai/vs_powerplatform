@@ -1,0 +1,541 @@
+Screens:
+  MainScreen:
+    Properties:
+      Fill: =ColorBg
+    Children:
+
+      # ── HEADER ─────────────────────────────────────────────────
+      - rectHeader:
+          Control: Rectangle
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =HeaderH
+            Fill: =ColorPrimary
+
+      - lblTitle:
+          Control: Label
+          Properties:
+            X: =0
+            Y: =20
+            Width: =Parent.Width
+            Height: =40
+            Text: =AppName
+            Color: =Color.White
+            Size: =FsTitle
+            FontWeight: =FontWeight.Bold
+            Align: =Align.Center
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - lblVersion:
+          Control: Label
+          Properties:
+            X: =0
+            Y: =HeaderH - 18
+            Width: =Parent.Width
+            Height: =14
+            Text: =AppVersion
+            Color: =RGBA(255, 255, 255, 0.7)
+            Size: =9
+            Align: =Align.Center
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      # ── DISPLAY ─────────────────────────────────────────────────
+      - rectDisplay:
+          Control: Rectangle
+          Properties:
+            X: =GridPadX
+            Y: =DisplayY
+            Width: =Parent.Width - (GridPadX * 2)
+            Height: =DisplayH
+            Fill: =ColorCard
+
+      - lblDisplay:
+          Control: Label
+          Properties:
+            X: =GridPadX + 16
+            Y: =DisplayY
+            Width: =Parent.Width - (GridPadX * 2) - 32
+            Height: =DisplayH
+            Text: =varDisplay
+            Color: =ColorTextDark
+            Size: =FsDisplay
+            FontWeight: =FontWeight.Bold
+            Align: =Align.Right
+            VerticalAlign: =VerticalAlign.Middle
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - lblOperatorHint:
+          Control: Label
+          Properties:
+            X: =GridPadX + 16
+            Y: =DisplayY + 8
+            Width: =60
+            Height: =22
+            Text: =varOperator
+            Color: =ColorPrimary
+            Size: =FsSubtitle
+            FontWeight: =FontWeight.Bold
+            Align: =Align.Left
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      # ════════════════════════════════════════════════════════════
+      # ROW 1: C   ÷   ×   −
+      # ════════════════════════════════════════════════════════════
+
+      - btnClear:
+          Control: Button
+          Properties:
+            X: =GridPadX
+            Y: =GridY
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="C"
+            FontColor: =ColorClearText
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Bold
+            Fill: =ColorClearBg
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =Set(varDisplay, "0");
+              Set(varStoredValue, 0);
+              Set(varOperator, "");
+              Set(varJustCalculated, false)
+
+      - btnDivide:
+          Control: Button
+          Properties:
+            X: =GridPadX + (BtnW + GridGap)
+            Y: =GridY
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="÷"
+            FontColor: =ColorOperator
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Bold
+            Fill: =ColorOperatorBg
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =If(varOperator <> "" And !varJustCalculated,
+                Set(varStoredValue, IfError(
+                  Switch(varOperator,
+                    "+", varStoredValue + Value(varDisplay),
+                    "-", varStoredValue - Value(varDisplay),
+                    "*", varStoredValue * Value(varDisplay),
+                    "/", varStoredValue / Value(varDisplay),
+                    Value(varDisplay)),
+                  0));
+                Set(varDisplay, Text(varStoredValue)),
+                Set(varStoredValue, Value(varDisplay))
+              );
+              Set(varOperator, "/");
+              Set(varJustCalculated, true)
+
+      - btnMultiply:
+          Control: Button
+          Properties:
+            X: =GridPadX + 2 * (BtnW + GridGap)
+            Y: =GridY
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="×"
+            FontColor: =ColorOperator
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Bold
+            Fill: =ColorOperatorBg
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =If(varOperator <> "" And !varJustCalculated,
+                Set(varStoredValue, IfError(
+                  Switch(varOperator,
+                    "+", varStoredValue + Value(varDisplay),
+                    "-", varStoredValue - Value(varDisplay),
+                    "*", varStoredValue * Value(varDisplay),
+                    "/", varStoredValue / Value(varDisplay),
+                    Value(varDisplay)),
+                  0));
+                Set(varDisplay, Text(varStoredValue)),
+                Set(varStoredValue, Value(varDisplay))
+              );
+              Set(varOperator, "*");
+              Set(varJustCalculated, true)
+
+      - btnMinus:
+          Control: Button
+          Properties:
+            X: =GridPadX + 3 * (BtnW + GridGap)
+            Y: =GridY
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="−"
+            FontColor: =ColorOperator
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Bold
+            Fill: =ColorOperatorBg
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =If(varOperator <> "" And !varJustCalculated,
+                Set(varStoredValue, IfError(
+                  Switch(varOperator,
+                    "+", varStoredValue + Value(varDisplay),
+                    "-", varStoredValue - Value(varDisplay),
+                    "*", varStoredValue * Value(varDisplay),
+                    "/", varStoredValue / Value(varDisplay),
+                    Value(varDisplay)),
+                  0));
+                Set(varDisplay, Text(varStoredValue)),
+                Set(varStoredValue, Value(varDisplay))
+              );
+              Set(varOperator, "-");
+              Set(varJustCalculated, true)
+
+      # ════════════════════════════════════════════════════════════
+      # ROW 2: 7   8   9   +
+      # ════════════════════════════════════════════════════════════
+
+      - btn7:
+          Control: Button
+          Properties:
+            X: =GridPadX
+            Y: =GridY + (BtnH + GridGap)
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="7"
+            FontColor: =ColorTextDark
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorCard
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =Set(varDisplay, If(varJustCalculated Or varDisplay = "0", "7", varDisplay & "7"));
+              Set(varJustCalculated, false)
+
+      - btn8:
+          Control: Button
+          Properties:
+            X: =GridPadX + (BtnW + GridGap)
+            Y: =GridY + (BtnH + GridGap)
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="8"
+            FontColor: =ColorTextDark
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorCard
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =Set(varDisplay, If(varJustCalculated Or varDisplay = "0", "8", varDisplay & "8"));
+              Set(varJustCalculated, false)
+
+      - btn9:
+          Control: Button
+          Properties:
+            X: =GridPadX + 2 * (BtnW + GridGap)
+            Y: =GridY + (BtnH + GridGap)
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="9"
+            FontColor: =ColorTextDark
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorCard
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =Set(varDisplay, If(varJustCalculated Or varDisplay = "0", "9", varDisplay & "9"));
+              Set(varJustCalculated, false)
+
+      - btnPlus:
+          Control: Button
+          Properties:
+            X: =GridPadX + 3 * (BtnW + GridGap)
+            Y: =GridY + (BtnH + GridGap)
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="+"
+            FontColor: =ColorOperator
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Bold
+            Fill: =ColorOperatorBg
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =If(varOperator <> "" And !varJustCalculated,
+                Set(varStoredValue, IfError(
+                  Switch(varOperator,
+                    "+", varStoredValue + Value(varDisplay),
+                    "-", varStoredValue - Value(varDisplay),
+                    "*", varStoredValue * Value(varDisplay),
+                    "/", varStoredValue / Value(varDisplay),
+                    Value(varDisplay)),
+                  0));
+                Set(varDisplay, Text(varStoredValue)),
+                Set(varStoredValue, Value(varDisplay))
+              );
+              Set(varOperator, "+");
+              Set(varJustCalculated, true)
+
+      # ════════════════════════════════════════════════════════════
+      # ROW 3: 4   5   6   .
+      # ════════════════════════════════════════════════════════════
+
+      - btn4:
+          Control: Button
+          Properties:
+            X: =GridPadX
+            Y: =GridY + 2 * (BtnH + GridGap)
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="4"
+            FontColor: =ColorTextDark
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorCard
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =Set(varDisplay, If(varJustCalculated Or varDisplay = "0", "4", varDisplay & "4"));
+              Set(varJustCalculated, false)
+
+      - btn5:
+          Control: Button
+          Properties:
+            X: =GridPadX + (BtnW + GridGap)
+            Y: =GridY + 2 * (BtnH + GridGap)
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="5"
+            FontColor: =ColorTextDark
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorCard
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =Set(varDisplay, If(varJustCalculated Or varDisplay = "0", "5", varDisplay & "5"));
+              Set(varJustCalculated, false)
+
+      - btn6:
+          Control: Button
+          Properties:
+            X: =GridPadX + 2 * (BtnW + GridGap)
+            Y: =GridY + 2 * (BtnH + GridGap)
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="6"
+            FontColor: =ColorTextDark
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorCard
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =Set(varDisplay, If(varJustCalculated Or varDisplay = "0", "6", varDisplay & "6"));
+              Set(varJustCalculated, false)
+
+      - btnDot:
+          Control: Button
+          Properties:
+            X: =GridPadX + 3 * (BtnW + GridGap)
+            Y: =GridY + 2 * (BtnH + GridGap)
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="."
+            FontColor: =ColorTextDark
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Bold
+            Fill: =ColorCard
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =Set(varDisplay,
+                If(varJustCalculated, "0.",
+                  If(Find(".", varDisplay) = 0,
+                    varDisplay & ".",
+                    varDisplay)));
+              Set(varJustCalculated, false)
+
+      # ════════════════════════════════════════════════════════════
+      # ROW 4: 1   2   3   =
+      # ════════════════════════════════════════════════════════════
+
+      - btn1:
+          Control: Button
+          Properties:
+            X: =GridPadX
+            Y: =GridY + 3 * (BtnH + GridGap)
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="1"
+            FontColor: =ColorTextDark
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorCard
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =Set(varDisplay, If(varJustCalculated Or varDisplay = "0", "1", varDisplay & "1"));
+              Set(varJustCalculated, false)
+
+      - btn2:
+          Control: Button
+          Properties:
+            X: =GridPadX + (BtnW + GridGap)
+            Y: =GridY + 3 * (BtnH + GridGap)
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="2"
+            FontColor: =ColorTextDark
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorCard
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =Set(varDisplay, If(varJustCalculated Or varDisplay = "0", "2", varDisplay & "2"));
+              Set(varJustCalculated, false)
+
+      - btn3:
+          Control: Button
+          Properties:
+            X: =GridPadX + 2 * (BtnW + GridGap)
+            Y: =GridY + 3 * (BtnH + GridGap)
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="3"
+            FontColor: =ColorTextDark
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorCard
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =Set(varDisplay, If(varJustCalculated Or varDisplay = "0", "3", varDisplay & "3"));
+              Set(varJustCalculated, false)
+
+      - btnEquals:
+          Control: Button
+          Properties:
+            X: =GridPadX + 3 * (BtnW + GridGap)
+            Y: =GridY + 3 * (BtnH + GridGap)
+            Width: =BtnW
+            Height: =BtnH
+            Text: ="="
+            FontColor: =ColorEqualsText
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Bold
+            Fill: =ColorEqualsBg
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =Set(varStoredValue, IfError(
+                Switch(varOperator,
+                  "+", varStoredValue + Value(varDisplay),
+                  "-", varStoredValue - Value(varDisplay),
+                  "*", varStoredValue * Value(varDisplay),
+                  "/", varStoredValue / Value(varDisplay),
+                  Value(varDisplay)),
+                Notify("Math error", NotificationType.Error); 0));
+              Set(varDisplay, Text(varStoredValue));
+              Set(varOperator, "");
+              Set(varJustCalculated, true)
+
+      # ════════════════════════════════════════════════════════════
+      # ROW 5: 0 (spans 4 columns)
+      # ════════════════════════════════════════════════════════════
+
+      - btn0:
+          Control: Button
+          Properties:
+            X: =GridPadX
+            Y: =GridY + 4 * (BtnH + GridGap)
+            Width: =Parent.Width - (GridPadX * 2)
+            Height: =BtnH
+            Text: ="0"
+            FontColor: =ColorTextDark
+            FontSize: =FsButton
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorCard
+            BorderThickness: =0
+            BorderRadiusTopLeft: =16
+            BorderRadiusTopRight: =16
+            BorderRadiusBottomLeft: =16
+            BorderRadiusBottomRight: =16
+            OnSelect: |-
+              =Set(varDisplay, If(varJustCalculated, "0", If(varDisplay = "0", "0", varDisplay & "0")));
+              Set(varJustCalculated, false)
+
+      # ── COPYRIGHT LINK ─────────────────────────────────────────
+      - btnCopyright:
+          Control: Button
+          Properties:
+            X: =0
+            Y: =Parent.Height - 36
+            Width: =Parent.Width
+            Height: =28
+            Text: ="© Copyright by WeeSiong"
+            FontColor: =ColorTextGray
+            FontSize: =FsBody
+            FontWeight: =FontWeight.Semibold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+            OnSelect: =Navigate(CopyrightScreen, ScreenTransition.Fade)

@@ -1,0 +1,49 @@
+App:
+  Properties:
+    StartScreen: =MainScreen
+    OnStart: |-
+      =Set(varCurrentUser, User());
+      Set(varDisplay, "0");
+      Set(varStoredValue, 0);
+      Set(varOperator, "");
+      Set(varJustCalculated, false)
+    Formulas: |-
+      =AppName = "Calculator POC";
+      AppVersion = "v1.0.0 · 2026-05-08";
+
+      // ── Color Palette ───────────────────────────────────────────────
+      ColorPrimary       = RGBA(99, 91, 255, 1);
+      ColorPrimaryMid    = RGBA(130, 120, 255, 1);
+      ColorPrimaryBg     = RGBA(220, 215, 255, 0.35);
+      ColorBg            = RGBA(238, 238, 252, 1);
+      ColorCard          = RGBA(255, 255, 255, 1);
+      ColorTextDark      = RGBA(28, 24, 72, 1);
+      ColorTextMid       = RGBA(90, 84, 140, 1);
+      ColorTextGray      = RGBA(148, 142, 190, 1);
+      ColorBorder        = RGBA(224, 222, 240, 1);
+      ColorOperator      = RGBA(99, 91, 255, 1);
+      ColorOperatorBg    = RGBA(238, 238, 252, 1);
+      ColorClearBg       = RGBA(255, 235, 235, 1);
+      ColorClearText     = RGBA(220, 50, 50, 1);
+      ColorEqualsBg      = RGBA(99, 91, 255, 1);
+      ColorEqualsText    = RGBA(255, 255, 255, 1);
+
+      // ── Typography ──────────────────────────────────────────────────
+      FsCaption  = 11;
+      FsBody     = 14;
+      FsSubtitle = 16;
+      FsTitle    = 22;
+      FsButton   = 28;
+      FsDisplay  = 56;
+
+      // ── Layout ──────────────────────────────────────────────────────
+      AppWidth   = 390;
+      AppHeight  = 844;
+      HeaderH    = 80;
+      DisplayY   = 100;
+      DisplayH   = 140;
+      GridY      = 260;
+      GridGap    = 8;
+      GridPadX   = 16;
+      BtnW       = (AppWidth - (GridPadX * 2) - (GridGap * 3)) / 4;
+      BtnH       = 88

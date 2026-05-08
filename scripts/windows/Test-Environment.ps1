@@ -47,8 +47,7 @@ $results = @(
     (Test-Tool -Name '.NET SDK'         -Command 'dotnet --version'),
     (Test-Tool -Name 'PAC CLI'          -Command 'pac --version'),
     (Test-Tool -Name 'Azure CLI'        -Command 'az --version'),
-    (Test-Tool -Name 'VS Code'          -Command 'code --version'),
-    (Test-Tool -Name 'Docker'           -Command 'docker --version')
+    (Test-Tool -Name 'VS Code'          -Command 'code --version')
 )
 
 Write-Host ""

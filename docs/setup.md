@@ -40,13 +40,7 @@ winget install --id Microsoft.AzureCLI -e
 ```
 Verify: `az --version`
 
-### 6. Docker Desktop (optional)
-```powershell
-winget install --id Docker.DockerDesktop -e
-```
-After install: launch Docker Desktop, accept the license, sign in.
-
-### 7. Visual Studio Code
+### 6. Visual Studio Code
 ```powershell
 winget install --id Microsoft.VisualStudioCode -e
 ```

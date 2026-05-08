@@ -9,8 +9,10 @@
     - .NET 10 SDK
     - Power Platform CLI (PAC)
     - Azure CLI
-    - Docker Desktop (optional)
     - VS Code + recommended extensions
+
+    After installation, launches the Start-Toolkit.ps1 wizard which asks
+    what you want to build first.
 
 .NOTES
     Requires Administrator privileges.
@@ -18,13 +20,14 @@
 
 .EXAMPLE
     .\Install-All.ps1
-    .\Install-All.ps1 -SkipDocker
+    .\Install-All.ps1 -SkipVSCode
+    .\Install-All.ps1 -SkipWizard
 #>
 
 [CmdletBinding()]
 param(
-    [switch]$SkipDocker,
-    [switch]$SkipVSCode
+    [switch]$SkipVSCode,
+    [switch]$SkipWizard
 )
 
 $ErrorActionPreference = 'Stop'
@@ -107,10 +110,6 @@ if (-not $SkipVSCode) {
     Install-WingetPackage -Id 'Microsoft.VisualStudioCode' -DisplayName 'Visual Studio Code'
 }
 
-if (-not $SkipDocker) {
-    Install-WingetPackage -Id 'Docker.DockerDesktop' -DisplayName 'Docker Desktop'
-}
-
 # --- Refresh PATH so subsequent commands find new tools -------------------
 
 $env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' +
@@ -124,7 +123,6 @@ if (-not $SkipVSCode -and (Test-Command 'code')) {
         'anthropic.claude-code',
         'ms-dotnettools.csharp',
         'ms-azuretools.vscode-azurefunctions',
-        'ms-azuretools.vscode-docker',
         'github.vscode-pull-request-github',
         'redhat.vscode-yaml',
         'editorconfig.editorconfig'
@@ -164,14 +162,33 @@ if ($failures -eq 0) {
     Write-Host "================================================================" -ForegroundColor Green
     Write-Host " All tools installed successfully!" -ForegroundColor Green
     Write-Host "================================================================" -ForegroundColor Green
-    Write-Host ""
-    Write-Host "Next steps:" -ForegroundColor Yellow
-    Write-Host "  1. Restart your terminal (so PATH updates apply)"
-    Write-Host "  2. Run: .\scripts\windows\Connect-PowerPlatform.ps1"
-    Write-Host "  3. Open VS Code in this folder: code ."
 } else {
     Write-Host "================================================================" -ForegroundColor Yellow
     Write-Host " Installation completed with $failures issue(s)." -ForegroundColor Yellow
     Write-Host " Restart your terminal and re-run Test-Environment.ps1" -ForegroundColor Yellow
     Write-Host "================================================================" -ForegroundColor Yellow
+}
+
+# --- Launch the wizard -----------------------------------------------------
+
+if ($SkipWizard -or $failures -gt 0) {
+    Write-Host ""
+    Write-Host "Next steps:" -ForegroundColor Yellow
+    Write-Host "  1. Restart your terminal (so PATH updates apply)"
+    Write-Host "  2. Run: .\scripts\windows\Connect-PowerPlatform.ps1"
+    Write-Host "  3. Run: .\scripts\windows\Start-Toolkit.ps1"
+    Write-Host "  4. Open VS Code in this folder: code ."
+    return
+}
+
+Write-Host ""
+Write-Host "Launching Start-Toolkit wizard..." -ForegroundColor Cyan
+Write-Host ""
+
+$wizard = Join-Path $PSScriptRoot 'Start-Toolkit.ps1'
+if (Test-Path $wizard) {
+    & $wizard
+} else {
+    Write-Warn "Start-Toolkit.ps1 not found at $wizard"
+    Write-Host "Run it later with: .\scripts\windows\Start-Toolkit.ps1"
 }
