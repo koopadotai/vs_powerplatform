@@ -7,10 +7,11 @@ These markdown files are loaded by Claude AI as context when generating code or 
 | `powerapps-naming.md` | Naming conventions for all Power Platform artifacts |
 | `powerapps-canvas-standards.md` | Canvas App layout, theming, formula, validation rules |
 | `dataverse-schema-standards.md` | Dataverse table design, choices, lookups, security |
+| `powerplatform-mcp-framework.md` | How canvas-authoring + Dataverse MCP work together |
 | `dotnet-api-standards.md` | ASP.NET Core API structure, auth, validation, observability |
 | `security-standards.md` | OWASP-aligned security rules across all layers |
 | `alm-standards.md` | Branching, environments, releases, deployment |
-| `ai-integration-standards.md` | Claude API usage, prompt engineering, MCP servers |
+| `ai-integration-standards.md` | Claude API usage, prompt engineering, AI middleware |
 
 ## How memory is used
 

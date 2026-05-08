@@ -44,15 +44,16 @@ Before generating any code:
 
 | If the request involves... | Read |
 |---|---|
-| Canvas Apps | `memory/powerapps-canvas-standards.md`, `memory/powerapps-naming.md` |
+| Canvas Apps | `memory/powerapps-canvas-standards.md`, `memory/powerapps-naming.md`, `memory/powerplatform-mcp-framework.md` |
 | Model-Driven Apps | `memory/powerapps-modeldriven-standards.md` |
-| Dataverse | `memory/dataverse-schema-standards.md`, `memory/powerapps-naming.md` |
+| Dataverse (schema, tables, columns) | `memory/dataverse-schema-standards.md`, `memory/powerapps-naming.md`, `memory/powerplatform-mcp-framework.md` |
+| Setting up MCP for Power Apps / Dataverse | `memory/powerplatform-mcp-framework.md` |
 | Power Automate | `memory/powerautomate-standards.md` |
 | .NET API | `memory/dotnet-api-standards.md`, `memory/security-standards.md` |
 | Azure Functions | `memory/azure-functions-standards.md` |
 | Authentication | `memory/security-standards.md` |
 | Deployment / ALM | `memory/alm-standards.md` |
-| AI / MCP | `memory/ai-integration-standards.md` |
+| AI / Anthropic SDK / prompt engineering | `memory/ai-integration-standards.md` |
 
 ### 2. Apply the standards exactly
 

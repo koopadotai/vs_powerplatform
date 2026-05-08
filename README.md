@@ -110,8 +110,9 @@ These slash commands are available in Claude Code once the toolkit is loaded:
 
 | Command | Purpose |
 |---|---|
+| `/configure-dataverse-mcp` | Register Microsoft's Dataverse MCP server with Claude Code (one-time per env) |
 | `/build-canvas-app <description>` | Generate a complete Canvas App from a natural-language description |
-| `/build-dataverse-schema <domain>` | Design a Dataverse table schema for the given domain |
+| `/build-dataverse-schema <domain>` | Design a Dataverse table schema (uses Dataverse MCP to create tables when available) |
 | `/build-dotnet-api <name>` | Scaffold an ASP.NET Core Web API project |
 | `/build-azure-function <name>` | Scaffold an Azure Function project |
 | `/connect-data-source <connector>` | Wizard to add a data source to a Canvas App |

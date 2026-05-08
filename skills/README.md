@@ -4,8 +4,9 @@ Slash-command skills loaded by Claude Code in this repo.
 
 | Skill | Trigger | Purpose |
 |---|---|---|
+| `configure-dataverse-mcp` | `/configure-dataverse-mcp` | Register Microsoft's `@microsoft/dataverse` MCP server with Claude Code so Claude can read/create Dataverse schema |
 | `build-canvas-app` | `/build-canvas-app <description>` | Generate a Canvas App from a description |
-| `build-dataverse-schema` | `/build-dataverse-schema <domain>` | Design a Dataverse schema |
+| `build-dataverse-schema` | `/build-dataverse-schema <domain>` | Design a Dataverse schema (uses Dataverse MCP if configured, falls back to YAML manifest) |
 | `build-dotnet-api` | `/build-dotnet-api <name>` | Scaffold an ASP.NET Core API |
 | `new-project` | `/new-project <type> <name>` | Pick the right template and scaffold |
 | `validate-app` | `/validate-app` | Run lint, security, standards checks |

@@ -38,38 +38,72 @@ asset-management/
 | Backend | ASP.NET Core 10 (for reporting/integrations) |
 | Auth | Microsoft Entra ID |
 
-## Quick start
+## Quick start (recommended path)
 
-### 1. Create the Dataverse schema
+The toolkit uses **two MCP servers** (canvas-authoring + Dataverse) so Claude can build the entire app — schema and screens — by reading `schema.yaml` and the `.pa.yaml` files. See [`memory/powerplatform-mcp-framework.md`](../../memory/powerplatform-mcp-framework.md) for the full framework overview.
 
-```powershell
-.\automation\CreateSchema.ps1 `
-    -Schema examples\asset-management\dataverse\schema.yaml `
-    -Environment dev
+### 1. Configure Dataverse MCP (one-time per dev/env)
+
+In Claude Code:
+
+```
+/configure-dataverse-mcp
 ```
 
-### 2. Seed sample data (optional)
+This registers the `@microsoft/dataverse` MCP server with your environment, with the `--preview` flag so Claude can create schema (tables/columns/choices/relationships).
 
-```powershell
-.\automation\Seed-Data.ps1 `
-    -Schema examples\asset-management\dataverse\schema.yaml `
-    -Environment dev
-```
+### 2. Auto-create the Dataverse schema
 
-### 3. Open the canvas app
+In Claude Code, ask:
 
-1. Open Power Apps Studio (make.powerapps.com) → New Canvas App (phone)
-2. Enable coauthoring: **Settings → Updates → Coauthoring**
-3. Add the data source: **Data → + Add data → "Assets"** (also Asset Categories)
-4. From VS Code, run **Compile canvas app to Power Apps Studio**
+> Read `examples/asset-management/dataverse/schema.yaml` and create the tables in Dataverse.
 
-### 4. Run the API locally
+Claude calls the Dataverse MCP create tools and produces:
+- `ws_assetcategory` (table + 3 columns)
+- `ws_asset` (table + 9 columns + lookup to category + lookup to systemuser)
+- `ws_assetassignment` (table + 6 columns)
+- `ws_assetstatus` (choice set, 5 options)
+- 2 relationships (1:N: category→assets, 1:N: asset→assignments)
+
+It will report which were created and any failures.
+
+### 3. Configure canvas-authoring MCP for the new app
+
+1. https://make.powerapps.com → New Canvas App (phone) → name it "Asset Management"
+2. Settings → Updates → Coauthoring → ON
+3. Copy the Studio URL
+4. In Claude Code: `/configure-canvas-mcp` (paste URL when prompted)
+
+### 4. Push the canvas app
+
+In Claude Code:
+
+> Compile `examples/asset-management/canvas/` to Studio.
+
+Claude invokes `mcp__canvas-authoring__compile_canvas`. Within seconds, the home screen, asset list, detail, and edit screens appear in your Studio session.
+
+### 5. Add the data sources to the app
+
+In Power Apps Studio → **Data → + Add data**:
+- Search "Assets" → Add
+- Search "Asset Categories" → Add
+
+The app immediately becomes functional — KPI counts populate, search works, you can add/edit/delete assets.
+
+### 6. (Optional) Run the .NET reporting API locally
 
 ```powershell
 cd examples\asset-management\api\AssetApi
 dotnet run
 # Open https://localhost:5001/openapi/v1.json
 ```
+
+## Alternative — manual path (no MCP)
+
+If you don't want to set up the MCP servers:
+
+1. **Schema**: Open Power Platform maker portal → create the tables manually following [`docs/schema.md`](docs/schema.md), or use `pac solution import` if you have an existing solution package.
+2. **Canvas**: Pack the YAML with `.\automation\Pack-Canvas.ps1` (only works if YAML was originally unpacked from a real .msapp; for hand-authored, use the maker portal to create the app shell, then add controls manually).
 
 ## Design Decisions
 
