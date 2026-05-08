@@ -82,24 +82,86 @@ Or browse `examples/asset-management/` for the reference implementation.
 
 ```
 vs_powerapp/
-├── docs/                       # Architecture, onboarding, deployment guides
-├── scripts/windows/            # PowerShell setup + automation
-├── templates/                  # Reusable starter projects
-│   ├── powerapps/              #   Canvas Apps, Model-Driven, Dataverse
-│   ├── dotnet/                 #   ASP.NET Core APIs, Azure Functions
-│   └── uiux/                   #   Mobile, tablet, dashboard layouts
-├── memory/                     # Claude AI memory files (.md)
-├── skills/                     # Claude AI slash-command skills
-├── examples/                   # Reference applications
-│   └── asset-management/       #   End-to-end sample
-├── automation/                 # Project scaffolding + deployment scripts
-├── devops/                     # CI/CD + Docker
-│   ├── github-workflows/
-│   └── docker/
-├── standards/                  # Enterprise engineering standards
-├── .claude/                    # Project-scoped Claude config
-├── CLAUDE.md                   # Repo-wide AI instructions
-└── README.md                   # This file
+├── docs/                                       # Architecture, onboarding, deployment, troubleshooting
+│   ├── architecture.md
+│   ├── deployment.md
+│   ├── onboarding.md
+│   ├── setup.md
+│   └── troubleshooting.md
+│
+├── scripts/windows/                            # PowerShell setup + post-install wizard
+│   ├── Install-All.ps1                         #   One-click installer (winget)
+│   ├── Test-Environment.ps1                    #   Validation report
+│   ├── Connect-PowerPlatform.ps1               #   PAC CLI auth wizard
+│   └── Start-Toolkit.ps1                       #   Post-install "what to build?" wizard
+│
+├── memory/                                     # Claude AI memory (loaded as context)
+│   ├── powerapps-naming.md
+│   ├── powerapps-canvas-standards.md
+│   ├── dataverse-schema-standards.md
+│   ├── powerplatform-mcp-framework.md          #   canvas-authoring + Dataverse MCPs
+│   ├── dotnet-api-standards.md
+│   ├── security-standards.md
+│   ├── alm-standards.md
+│   └── ai-integration-standards.md
+│
+├── skills/                                     # Claude AI slash commands
+│   ├── configure-dataverse-mcp.md              #   Register @microsoft/dataverse MCP
+│   ├── build-canvas-app.md
+│   ├── build-dataverse-schema.md               #   Uses Dataverse MCP when available
+│   ├── build-dotnet-api.md
+│   ├── new-project.md
+│   ├── validate-app.md
+│   └── deploy-solution.md
+│
+├── templates/                                  # Reusable starter projects
+│   ├── powerapps/
+│   │   ├── canvas-starter/                     #   Phone-form-factor Canvas App
+│   │   │   ├── App.pa.yaml
+│   │   │   ├── HomeScreen.pa.yaml
+│   │   │   ├── ListScreen.pa.yaml
+│   │   │   └── ProfileScreen.pa.yaml
+│   │   └── dataverse/                          #   Schema YAML manifests
+│   │       └── sample-schema/
+│   ├── dotnet/
+│   │   └── api-starter/                        #   ASP.NET Core 10 Minimal API
+│   │       ├── src/__SERVICE_NAME__/           #     Token-replaced on scaffold
+│   │       └── tests/__SERVICE_NAME__.Tests/
+│   └── uiux/
+│       └── themes/                             #   theme-modern, theme-corporate, theme-dark
+│
+├── examples/                                   # Reference applications
+│   ├── calculator-poc/                         #   Minimal POC — no data, 2 screens
+│   │   ├── canvas/
+│   │   │   ├── App.pa.yaml
+│   │   │   ├── MainScreen.pa.yaml              #     4-function calculator
+│   │   │   └── CopyrightScreen.pa.yaml         #     User welcome + copyright
+│   │   └── README.md
+│   └── asset-management/                       #   End-to-end: Canvas + Dataverse + .NET API
+│       ├── canvas/
+│       ├── dataverse/schema.yaml
+│       └── docs/
+│
+├── automation/                                 # Scaffolding + validation scripts
+│   ├── New-Project.ps1                         #   Scaffold from any template
+│   ├── Test-AppStandards.ps1                   #   Lint Canvas Apps + .NET services
+│   └── Pack-Canvas.ps1                         #   PAC CLI canvas pack wrapper
+│
+├── devops/                                     # CI/CD + container assets
+│   └── (github-workflows, docker)              # (Phase 3)
+│
+├── standards/                                  # Enterprise engineering standards
+│   ├── architecture-principles.md
+│   └── git-branching.md
+│
+├── .github/
+│   ├── workflows/                              # CI + Release pipelines
+│   └── PULL_REQUEST_TEMPLATE.md
+│
+├── .claude/settings.json                       # Project-scoped permissions
+├── CLAUDE.md                                   # Repo-wide AI instructions
+├── .gitignore
+└── README.md
 ```
 
 ---
