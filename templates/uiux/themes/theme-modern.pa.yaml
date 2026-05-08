@@ -1,0 +1,17 @@
+# Modern Theme — Purple Gradient
+# Default theme for the Canvas Starter.
+# Drop these formulas into App.pa.yaml's Formulas: block.
+
+# ── Color Palette ───────────────────────────────────────────────
+ColorPrimary       = RGBA(99, 91, 255, 1);
+ColorPrimaryMid    = RGBA(130, 120, 255, 1);
+ColorPrimaryBg     = RGBA(220, 215, 255, 0.35);
+ColorBg            = RGBA(238, 238, 252, 1);
+ColorCard          = RGBA(255, 255, 255, 1);
+ColorTextDark      = RGBA(28, 24, 72, 1);
+ColorTextMid       = RGBA(90, 84, 140, 1);
+ColorTextGray      = RGBA(148, 142, 190, 1);
+ColorBorder        = RGBA(224, 222, 240, 1);
+ColorError         = RGBA(220, 50, 50, 1);
+ColorWarning       = RGBA(245, 158, 11, 1);
+ColorSuccess       = RGBA(40, 185, 100, 1);

@@ -1,0 +1,195 @@
+Screens:
+  AssetEditScreen:
+    Properties:
+      Fill: =ColorBg
+      OnVisible: |-
+        =Reset(txtName);
+        Reset(txtSerial);
+        Reset(cmbCategory);
+        Reset(cmbStatus)
+    Children:
+
+      # ── HEADER ─────────────────────────────────────────────────
+      - rectHeader:
+          Control: Rectangle
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =HeaderH
+            Fill: =ColorPrimary
+
+      - btnCancel:
+          Control: Button
+          Properties:
+            X: =SpMedium
+            Y: =SpMedium + 4
+            Width: =60
+            Height: =44
+            Text: ="Cancel"
+            FontColor: =Color.White
+            FontSize: =FsBody
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+            OnSelect: =Back()
+
+      - lblTitle:
+          Control: Label
+          Properties:
+            X: =80
+            Y: =20
+            Width: =Parent.Width - 160
+            Height: =40
+            Text: =If(IsBlank(varEditingAsset.ws_assetname), "New Asset", "Edit Asset")
+            Color: =Color.White
+            Size: =FsTitle
+            FontWeight: =FontWeight.Bold
+            Align: =Align.Center
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      # ── FORM ────────────────────────────────────────────────────
+      - lblNameLabel:
+          Control: Label
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + SpMedium
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =22
+            Text: ="Asset Name *"
+            Color: =ColorTextMid
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - txtName:
+          Control: TextInput
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + SpMedium + 24
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =44
+            HintText: ="e.g. Dell XPS 13"
+            Default: =Coalesce(varEditingAsset.ws_assetname, "")
+            Fill: =ColorCard
+            BorderColor: =ColorBorder
+            BorderThickness: =1
+            FontSize: =FsBody
+            Color: =ColorTextDark
+
+      - lblSerialLabel:
+          Control: Label
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 90
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =22
+            Text: ="Serial Number *"
+            Color: =ColorTextMid
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - txtSerial:
+          Control: TextInput
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 114
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =44
+            HintText: ="e.g. SN-12345-ABCD"
+            Default: =Coalesce(varEditingAsset.ws_serialnumber, "")
+            Fill: =ColorCard
+            BorderColor: =ColorBorder
+            BorderThickness: =1
+            FontSize: =FsBody
+            Color: =ColorTextDark
+
+      - lblCategoryLabel:
+          Control: Label
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 180
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =22
+            Text: ="Category *"
+            Color: =ColorTextMid
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - cmbCategory:
+          Control: ComboBox
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 204
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =44
+            Items: ='Asset Categories'
+            DefaultSelectedItems: =[varEditingAsset.ws_categoryid]
+            SelectMultiple: =false
+            Fill: =ColorCard
+
+      - lblStatusLabel:
+          Control: Label
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 270
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =22
+            Text: ="Status *"
+            Color: =ColorTextMid
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - cmbStatus:
+          Control: ComboBox
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 294
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =44
+            Items: =Choices('Assets'.ws_status)
+            DefaultSelectedItems: =[varEditingAsset.ws_status]
+            SelectMultiple: =false
+            Fill: =ColorCard
+
+      # ── SAVE BUTTON ─────────────────────────────────────────────
+      - btnSave:
+          Control: Button
+          Properties:
+            X: =SpMedium
+            Y: =Parent.Height - 100
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =56
+            Text: ="Save"
+            FontColor: =Color.White
+            FontSize: =FsSubtitle
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorPrimary
+            BorderThickness: =0
+            BorderRadiusTopLeft: =28
+            BorderRadiusTopRight: =28
+            BorderRadiusBottomLeft: =28
+            BorderRadiusBottomRight: =28
+            DisplayMode: =If(Len(txtName.Text) > 0 And Len(txtSerial.Text) > 0 And !IsBlank(cmbCategory.Selected) And !IsBlank(cmbStatus.Selected), DisplayMode.Edit, DisplayMode.Disabled)
+            OnSelect: |-
+              =IfError(
+                Patch('Assets',
+                  If(IsBlank(varEditingAsset.ws_assetname), Defaults('Assets'), varEditingAsset),
+                  {
+                    ws_assetname: txtName.Text,
+                    ws_serialnumber: txtSerial.Text,
+                    ws_categoryid: cmbCategory.Selected,
+                    ws_status: cmbStatus.Selected
+                  }
+                );
+                Notify("Saved", NotificationType.Success);
+                Navigate(AssetListScreen, ScreenTransition.CoverLeft),
+                Notify("Save failed: " & FirstError.Message, NotificationType.Error)
+              )

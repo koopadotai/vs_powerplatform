@@ -1,0 +1,16 @@
+# Dark Theme
+# Drop these formulas into App.pa.yaml's Formulas: block.
+
+# ── Color Palette ───────────────────────────────────────────────
+ColorPrimary       = RGBA(130, 120, 255, 1);       // Lighter primary for dark bg
+ColorPrimaryMid    = RGBA(160, 152, 255, 1);
+ColorPrimaryBg     = RGBA(50, 40, 95, 0.5);
+ColorBg            = RGBA(18, 20, 30, 1);
+ColorCard          = RGBA(28, 32, 44, 1);
+ColorTextDark      = RGBA(238, 238, 252, 1);       // Inverted: light text on dark
+ColorTextMid       = RGBA(180, 184, 200, 1);
+ColorTextGray      = RGBA(120, 124, 140, 1);
+ColorBorder        = RGBA(48, 52, 68, 1);
+ColorError         = RGBA(255, 110, 130, 1);
+ColorWarning       = RGBA(252, 180, 80, 1);
+ColorSuccess       = RGBA(80, 220, 140, 1);

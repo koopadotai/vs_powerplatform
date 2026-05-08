@@ -1,0 +1,217 @@
+Screens:
+  HomeScreen:
+    Properties:
+      Fill: =ColorBg
+    Children:
+
+      # ── HEADER ─────────────────────────────────────────────────
+      - rectHeader:
+          Control: Rectangle
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =HeaderH
+            Fill: =ColorPrimary
+
+      - lblTitle:
+          Control: Label
+          Properties:
+            X: =0
+            Y: =20
+            Width: =Parent.Width
+            Height: =40
+            Text: ="Asset Management"
+            Color: =Color.White
+            Size: =FsTitle
+            FontWeight: =FontWeight.Bold
+            Align: =Align.Center
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - lblVersion:
+          Control: Label
+          Properties:
+            X: =0
+            Y: =HeaderH - 18
+            Width: =Parent.Width
+            Height: =14
+            Text: =AppVersion
+            Color: =RGBA(255, 255, 255, 0.7)
+            Size: =9
+            Align: =Align.Center
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      # ── KPI CARDS ───────────────────────────────────────────────
+      - rectKpi1:
+          Control: Rectangle
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + SpMedium
+            Width: =(Parent.Width - (SpMedium * 3)) / 2
+            Height: =100
+            Fill: =ColorCard
+
+      - lblKpi1Value:
+          Control: Label
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + SpMedium + 14
+            Width: =(Parent.Width - (SpMedium * 3)) / 2
+            Height: =44
+            Text: =Text(CountRows('Assets'))
+            Color: =ColorPrimary
+            Size: =FsHeadline
+            FontWeight: =FontWeight.Bold
+            Align: =Align.Center
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - lblKpi1Label:
+          Control: Label
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + SpMedium + 60
+            Width: =(Parent.Width - (SpMedium * 3)) / 2
+            Height: =22
+            Text: ="Total Assets"
+            Color: =ColorTextGray
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Align: =Align.Center
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - rectKpi2:
+          Control: Rectangle
+          Properties:
+            X: =(SpMedium * 2) + ((Parent.Width - (SpMedium * 3)) / 2)
+            Y: =HeaderH + SpMedium
+            Width: =(Parent.Width - (SpMedium * 3)) / 2
+            Height: =100
+            Fill: =ColorCard
+
+      - lblKpi2Value:
+          Control: Label
+          Properties:
+            X: =(SpMedium * 2) + ((Parent.Width - (SpMedium * 3)) / 2)
+            Y: =HeaderH + SpMedium + 14
+            Width: =(Parent.Width - (SpMedium * 3)) / 2
+            Height: =44
+            Text: =Text(CountIf('Assets', ws_status.'Asset Status' = "Assigned"))
+            Color: =ColorSuccess
+            Size: =FsHeadline
+            FontWeight: =FontWeight.Bold
+            Align: =Align.Center
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - lblKpi2Label:
+          Control: Label
+          Properties:
+            X: =(SpMedium * 2) + ((Parent.Width - (SpMedium * 3)) / 2)
+            Y: =HeaderH + SpMedium + 60
+            Width: =(Parent.Width - (SpMedium * 3)) / 2
+            Height: =22
+            Text: ="Currently Assigned"
+            Color: =ColorTextGray
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Align: =Align.Center
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      # ── ACTIONS ─────────────────────────────────────────────────
+      - lblQuickActions:
+          Control: Label
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 140
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =22
+            Text: ="QUICK ACTIONS"
+            Color: =ColorTextGray
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - btnViewAssets:
+          Control: Button
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 170
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =56
+            Text: ="📋  View All Assets"
+            FontColor: =Color.White
+            FontSize: =FsSubtitle
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorPrimary
+            BorderThickness: =0
+            BorderRadiusTopLeft: =28
+            BorderRadiusTopRight: =28
+            BorderRadiusBottomLeft: =28
+            BorderRadiusBottomRight: =28
+            OnSelect: =Navigate(AssetListScreen, ScreenTransition.Fade)
+
+      - btnAddAsset:
+          Control: Button
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 234
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =56
+            Text: ="➕  Add New Asset"
+            FontColor: =ColorPrimary
+            FontSize: =FsSubtitle
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorCard
+            BorderColor: =ColorPrimary
+            BorderThickness: =2
+            BorderRadiusTopLeft: =28
+            BorderRadiusTopRight: =28
+            BorderRadiusBottomLeft: =28
+            BorderRadiusBottomRight: =28
+            OnSelect: |-
+              =Set(varEditingAsset, Defaults('Assets'));
+              Navigate(AssetEditScreen, ScreenTransition.CoverRight)
+
+      # ── BOTTOM NAVIGATION ───────────────────────────────────────
+      - rectNavBg:
+          Control: Rectangle
+          Properties:
+            X: =0
+            Y: =Parent.Height - NavBarH
+            Width: =Parent.Width
+            Height: =NavBarH
+            Fill: =ColorCard
+
+      - btnNavHome:
+          Control: Button
+          Properties:
+            X: =0
+            Y: =Parent.Height - NavBarH
+            Width: =Parent.Width / 2
+            Height: =NavBarH
+            Text: ="🏠" & Char(10) & "Home"
+            FontColor: =ColorPrimary
+            FontSize: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorCard
+            BorderThickness: =0
+
+      - btnNavList:
+          Control: Button
+          Properties:
+            X: =Parent.Width / 2
+            Y: =Parent.Height - NavBarH
+            Width: =Parent.Width / 2
+            Height: =NavBarH
+            Text: ="📋" & Char(10) & "Assets"
+            FontColor: =ColorTextGray
+            FontSize: =FsCaption
+            Fill: =ColorCard
+            BorderThickness: =0
+            OnSelect: =Navigate(AssetListScreen, ScreenTransition.Fade)

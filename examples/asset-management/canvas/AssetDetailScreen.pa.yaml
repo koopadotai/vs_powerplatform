@@ -1,0 +1,293 @@
+Screens:
+  AssetDetailScreen:
+    Properties:
+      Fill: =ColorBg
+    Children:
+
+      # ── HEADER ─────────────────────────────────────────────────
+      - rectHeader:
+          Control: Rectangle
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =HeaderH
+            Fill: =ColorPrimary
+
+      - btnBack:
+          Control: Button
+          Properties:
+            X: =SpMedium
+            Y: =SpMedium + 4
+            Width: =44
+            Height: =44
+            Text: ="←"
+            FontColor: =Color.White
+            FontSize: =22
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+            OnSelect: =Back()
+
+      - lblTitle:
+          Control: Label
+          Properties:
+            X: =60
+            Y: =20
+            Width: =Parent.Width - 120
+            Height: =40
+            Text: ="Asset Details"
+            Color: =Color.White
+            Size: =FsTitle
+            FontWeight: =FontWeight.Bold
+            Align: =Align.Center
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - btnEdit:
+          Control: Button
+          Properties:
+            X: =Parent.Width - 60
+            Y: =SpMedium + 4
+            Width: =44
+            Height: =44
+            Text: ="✎"
+            FontColor: =Color.White
+            FontSize: =18
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+            OnSelect: |-
+              =Set(varEditingAsset, varSelectedAsset);
+              Navigate(AssetEditScreen, ScreenTransition.CoverRight)
+
+      # ── ASSET CARD ──────────────────────────────────────────────
+      - rectMainCard:
+          Control: Rectangle
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + SpMedium
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =160
+            Fill: =ColorCard
+
+      - lblAssetName:
+          Control: Label
+          Properties:
+            X: =SpMedium + SpMedium
+            Y: =HeaderH + SpMedium + SpMedium
+            Width: =Parent.Width - (SpMedium * 4) - 100
+            Height: =30
+            Text: =varSelectedAsset.ws_assetname
+            Color: =ColorTextDark
+            Size: =FsTitle
+            FontWeight: =FontWeight.Bold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - rectStatus:
+          Control: Rectangle
+          Properties:
+            X: =Parent.Width - SpMedium - 92
+            Y: =HeaderH + SpMedium + SpMedium + 4
+            Width: =80
+            Height: =28
+            Fill: =StatusColor(varSelectedAsset.ws_status.'Asset Status')
+
+      - lblStatus:
+          Control: Label
+          Properties:
+            X: =Parent.Width - SpMedium - 92
+            Y: =HeaderH + SpMedium + SpMedium + 4
+            Width: =80
+            Height: =28
+            Text: =varSelectedAsset.ws_status.'Asset Status'
+            Color: =Color.White
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Align: =Align.Center
+            VerticalAlign: =VerticalAlign.Middle
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - lblSerialLabel:
+          Control: Label
+          Properties:
+            X: =SpMedium + SpMedium
+            Y: =HeaderH + SpMedium + 60
+            Width: =Parent.Width - (SpMedium * 4)
+            Height: =18
+            Text: ="Serial Number"
+            Color: =ColorTextGray
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - lblSerialValue:
+          Control: Label
+          Properties:
+            X: =SpMedium + SpMedium
+            Y: =HeaderH + SpMedium + 80
+            Width: =Parent.Width - (SpMedium * 4)
+            Height: =22
+            Text: =varSelectedAsset.ws_serialnumber
+            Color: =ColorTextDark
+            Size: =FsBody
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - lblCategoryLabel:
+          Control: Label
+          Properties:
+            X: =SpMedium + SpMedium
+            Y: =HeaderH + SpMedium + 110
+            Width: =(Parent.Width - (SpMedium * 4)) / 2
+            Height: =18
+            Text: ="Category"
+            Color: =ColorTextGray
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - lblCategoryValue:
+          Control: Label
+          Properties:
+            X: =SpMedium + SpMedium
+            Y: =HeaderH + SpMedium + 130
+            Width: =(Parent.Width - (SpMedium * 4)) / 2
+            Height: =20
+            Text: =varSelectedAsset.ws_categoryid.ws_categoryname
+            Color: =ColorTextDark
+            Size: =FsBody
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      # ── ASSIGNMENT CARD ─────────────────────────────────────────
+      - lblAssignmentLabel:
+          Control: Label
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 200
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =22
+            Text: ="ASSIGNMENT"
+            Color: =ColorTextGray
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - rectAssignCard:
+          Control: Rectangle
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 226
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =100
+            Fill: =ColorCard
+
+      - lblAssignedToLabel:
+          Control: Label
+          Properties:
+            X: =SpMedium + SpMedium
+            Y: =HeaderH + 240
+            Width: =Parent.Width - (SpMedium * 4)
+            Height: =18
+            Text: ="Assigned To"
+            Color: =ColorTextGray
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - lblAssignedToValue:
+          Control: Label
+          Properties:
+            X: =SpMedium + SpMedium
+            Y: =HeaderH + 260
+            Width: =Parent.Width - (SpMedium * 4)
+            Height: =22
+            Text: =If(IsBlank(varSelectedAsset.ws_assignedto), "— Unassigned —", varSelectedAsset.ws_assignedto.'Full Name')
+            Color: =ColorTextDark
+            Size: =FsBody
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - lblAssignedDate:
+          Control: Label
+          Properties:
+            X: =SpMedium + SpMedium
+            Y: =HeaderH + 290
+            Width: =Parent.Width - (SpMedium * 4)
+            Height: =22
+            Text: =If(IsBlank(varSelectedAsset.ws_assigneddate), "", "Since " & FmtDate(varSelectedAsset.ws_assigneddate))
+            Color: =ColorTextGray
+            Size: =FsCaption
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      # ── DELETE ──────────────────────────────────────────────────
+      - btnDelete:
+          Control: Button
+          Properties:
+            X: =SpMedium
+            Y: =Parent.Height - NavBarH - 80
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =48
+            Text: ="🗑  Delete Asset"
+            FontColor: =ColorError
+            FontSize: =FsBody
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorCard
+            BorderColor: =ColorError
+            BorderThickness: =1
+            BorderRadiusTopLeft: =24
+            BorderRadiusTopRight: =24
+            BorderRadiusBottomLeft: =24
+            BorderRadiusBottomRight: =24
+            OnSelect: |-
+              =IfError(
+                Remove('Assets', varSelectedAsset);
+                Notify("Asset deleted", NotificationType.Success);
+                Navigate(AssetListScreen, ScreenTransition.CoverLeft),
+                Notify("Delete failed: " & FirstError.Message, NotificationType.Error)
+              )
+
+      # ── BOTTOM NAVIGATION ───────────────────────────────────────
+      - rectNavBg:
+          Control: Rectangle
+          Properties:
+            X: =0
+            Y: =Parent.Height - NavBarH
+            Width: =Parent.Width
+            Height: =NavBarH
+            Fill: =ColorCard
+
+      - btnNavHome:
+          Control: Button
+          Properties:
+            X: =0
+            Y: =Parent.Height - NavBarH
+            Width: =Parent.Width / 2
+            Height: =NavBarH
+            Text: ="🏠" & Char(10) & "Home"
+            FontColor: =ColorTextGray
+            FontSize: =FsCaption
+            Fill: =ColorCard
+            BorderThickness: =0
+            OnSelect: =Navigate(HomeScreen, ScreenTransition.Fade)
+
+      - btnNavList:
+          Control: Button
+          Properties:
+            X: =Parent.Width / 2
+            Y: =Parent.Height - NavBarH
+            Width: =Parent.Width / 2
+            Height: =NavBarH
+            Text: ="📋" & Char(10) & "Assets"
+            FontColor: =ColorPrimary
+            FontSize: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorCard
+            BorderThickness: =0
+            OnSelect: =Navigate(AssetListScreen, ScreenTransition.Fade)

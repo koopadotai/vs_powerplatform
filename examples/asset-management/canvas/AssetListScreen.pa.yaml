@@ -1,0 +1,232 @@
+Screens:
+  AssetListScreen:
+    Properties:
+      Fill: =ColorBg
+    Children:
+
+      # ── HEADER ─────────────────────────────────────────────────
+      - rectHeader:
+          Control: Rectangle
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =HeaderH
+            Fill: =ColorPrimary
+
+      - btnBack:
+          Control: Button
+          Properties:
+            X: =SpMedium
+            Y: =SpMedium + 4
+            Width: =44
+            Height: =44
+            Text: ="←"
+            FontColor: =Color.White
+            FontSize: =22
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+            OnSelect: =Navigate(HomeScreen, ScreenTransition.Fade)
+
+      - lblTitle:
+          Control: Label
+          Properties:
+            X: =0
+            Y: =20
+            Width: =Parent.Width
+            Height: =40
+            Text: ="Assets"
+            Color: =Color.White
+            Size: =FsTitle
+            FontWeight: =FontWeight.Bold
+            Align: =Align.Center
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      # ── SEARCH ──────────────────────────────────────────────────
+      - txtSearch:
+          Control: TextInput
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + SpMedium
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =44
+            HintText: ="Search by name or serial..."
+            Default: =""
+            Fill: =ColorCard
+            BorderColor: =ColorBorder
+            BorderThickness: =1
+            FontSize: =FsBody
+            Color: =ColorTextDark
+
+      # ── GALLERY ─────────────────────────────────────────────────
+      - galAssets:
+          Control: Gallery
+          Variant: Vertical
+          Properties:
+            Items: |-
+              =SortByColumns(
+                Filter('Assets',
+                  txtSearch.Text = "" Or
+                  StartsWith(ws_assetname, txtSearch.Text) Or
+                  StartsWith(ws_serialnumber, txtSearch.Text)),
+                "ws_assetname", SortOrder.Ascending)
+            X: =SpMedium
+            Y: =HeaderH + 72
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =Parent.Height - (HeaderH + 72) - NavBarH - 80
+            TemplateSize: =92
+            TemplatePadding: =6
+            ShowScrollbar: =false
+            Fill: =RGBA(0, 0, 0, 0)
+          Children:
+            - rectRow:
+                Control: Rectangle
+                Properties:
+                  X: =0
+                  Y: =3
+                  Width: =Parent.TemplateWidth
+                  Height: =80
+                  Fill: =ColorCard
+
+            - lblAssetName:
+                Control: Label
+                Properties:
+                  X: =SpMedium
+                  Y: =14
+                  Width: =Parent.TemplateWidth - (SpMedium * 2) - 90
+                  Height: =22
+                  Text: =ThisItem.ws_assetname
+                  Color: =ColorTextDark
+                  Size: =FsBody
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  BorderThickness: =0
+
+            - lblSerial:
+                Control: Label
+                Properties:
+                  X: =SpMedium
+                  Y: =38
+                  Width: =Parent.TemplateWidth - (SpMedium * 2) - 90
+                  Height: =20
+                  Text: ="SN: " & ThisItem.ws_serialnumber
+                  Color: =ColorTextGray
+                  Size: =FsCaption
+                  Fill: =RGBA(0, 0, 0, 0)
+                  BorderThickness: =0
+
+            - rectStatusPill:
+                Control: Rectangle
+                Properties:
+                  X: =Parent.TemplateWidth - 88
+                  Y: =26
+                  Width: =80
+                  Height: =28
+                  Fill: =StatusColor(ThisItem.ws_status.'Asset Status')
+
+            - lblStatus:
+                Control: Label
+                Properties:
+                  X: =Parent.TemplateWidth - 88
+                  Y: =26
+                  Width: =80
+                  Height: =28
+                  Text: =ThisItem.ws_status.'Asset Status'
+                  Color: =Color.White
+                  Size: =FsCaption
+                  FontWeight: =FontWeight.Semibold
+                  Align: =Align.Center
+                  VerticalAlign: =VerticalAlign.Middle
+                  Fill: =RGBA(0, 0, 0, 0)
+                  BorderThickness: =0
+
+            - btnRowSelect:
+                Control: Button
+                Properties:
+                  X: =0
+                  Y: =3
+                  Width: =Parent.TemplateWidth
+                  Height: =80
+                  Text: =""
+                  Fill: =RGBA(0, 0, 0, 0)
+                  BorderThickness: =0
+                  OnSelect: |-
+                    =Set(varSelectedAsset, ThisItem);
+                    Navigate(AssetDetailScreen, ScreenTransition.CoverRight)
+
+      # ── EMPTY STATE ─────────────────────────────────────────────
+      - lblEmpty:
+          Control: Label
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 200
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =80
+            Text: ="No assets match your search."
+            Color: =ColorTextGray
+            Size: =FsBody
+            Align: =Align.Center
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+            Visible: =CountRows(galAssets.AllItems) = 0
+
+      # ── FAB ─────────────────────────────────────────────────────
+      - btnAdd:
+          Control: Button
+          Properties:
+            X: =Parent.Width - 72 - SpMedium
+            Y: =Parent.Height - NavBarH - 72 - SpMedium
+            Width: =56
+            Height: =56
+            Text: ="+"
+            FontColor: =Color.White
+            FontSize: =28
+            FontWeight: =FontWeight.Bold
+            Fill: =ColorPrimary
+            BorderThickness: =0
+            BorderRadiusTopLeft: =28
+            BorderRadiusTopRight: =28
+            BorderRadiusBottomLeft: =28
+            BorderRadiusBottomRight: =28
+            OnSelect: |-
+              =Set(varEditingAsset, Defaults('Assets'));
+              Navigate(AssetEditScreen, ScreenTransition.CoverRight)
+
+      # ── BOTTOM NAVIGATION ───────────────────────────────────────
+      - rectNavBg:
+          Control: Rectangle
+          Properties:
+            X: =0
+            Y: =Parent.Height - NavBarH
+            Width: =Parent.Width
+            Height: =NavBarH
+            Fill: =ColorCard
+
+      - btnNavHome:
+          Control: Button
+          Properties:
+            X: =0
+            Y: =Parent.Height - NavBarH
+            Width: =Parent.Width / 2
+            Height: =NavBarH
+            Text: ="🏠" & Char(10) & "Home"
+            FontColor: =ColorTextGray
+            FontSize: =FsCaption
+            Fill: =ColorCard
+            BorderThickness: =0
+            OnSelect: =Navigate(HomeScreen, ScreenTransition.Fade)
+
+      - btnNavList:
+          Control: Button
+          Properties:
+            X: =Parent.Width / 2
+            Y: =Parent.Height - NavBarH
+            Width: =Parent.Width / 2
+            Height: =NavBarH
+            Text: ="📋" & Char(10) & "Assets"
+            FontColor: =ColorPrimary
+            FontSize: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =ColorCard
+            BorderThickness: =0

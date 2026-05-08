@@ -1,0 +1,107 @@
+solution:
+  name: AssetManagement
+  publisherPrefix: ws
+  version: 1.0.0
+  description: IT asset tracking — devices, categories, and assignments
+
+tables:
+
+  # ── Asset Category ──────────────────────────────────────────────
+  - schemaName: ws_assetcategory
+    displayName: Asset Category
+    pluralDisplayName: Asset Categories
+    primaryColumn: ws_categoryname
+    description: Groups assets by type (Laptop, Phone, Monitor, etc.)
+    ownership: Organization
+    auditingEnabled: true
+    columns:
+      - { schemaName: ws_categoryname, displayName: Category Name, type: Text, maxLength: 80, required: true }
+      - { schemaName: ws_icon,         displayName: Icon,          type: Text, maxLength: 4 }
+      - { schemaName: ws_description,  displayName: Description,   type: Memo, maxLength: 500 }
+
+  # ── Asset ───────────────────────────────────────────────────────
+  - schemaName: ws_asset
+    displayName: Asset
+    pluralDisplayName: Assets
+    primaryColumn: ws_assetname
+    description: Tracks individual IT assets and their lifecycle
+    ownership: Organization
+    auditingEnabled: true
+    columns:
+      - { schemaName: ws_assetname,    displayName: Asset Name,     type: Text,     maxLength: 100, required: true }
+      - { schemaName: ws_serialnumber, displayName: Serial Number,  type: Text,     maxLength: 50,  required: true }
+      - { schemaName: ws_categoryid,   displayName: Category,       type: Lookup,   target: ws_assetcategory, required: true }
+      - { schemaName: ws_status,       displayName: Status,         type: Choice,   optionSet: ws_assetstatus, required: true }
+      - { schemaName: ws_purchasedate, displayName: Purchase Date,  type: DateTime, behavior: DateOnly }
+      - { schemaName: ws_purchasecost, displayName: Purchase Cost,  type: Currency }
+      - { schemaName: ws_warrantyend,  displayName: Warranty End,   type: DateTime, behavior: DateOnly }
+      - { schemaName: ws_assignedto,   displayName: Assigned To,    type: Lookup,   target: systemuser }
+      - { schemaName: ws_assigneddate, displayName: Assigned Date,  type: DateTime }
+      - { schemaName: ws_notes,        displayName: Notes,          type: Memo,     maxLength: 2000 }
+
+  # ── Assignment History ──────────────────────────────────────────
+  - schemaName: ws_assetassignment
+    displayName: Asset Assignment
+    pluralDisplayName: Asset Assignments
+    primaryColumn: ws_assignmentname
+    description: Historical record of every asset assignment for audit
+    ownership: Organization
+    auditingEnabled: true
+    columns:
+      - { schemaName: ws_assignmentname, displayName: Assignment Reference, type: Text, maxLength: 50, required: true }
+      - { schemaName: ws_assetid,        displayName: Asset,                type: Lookup, target: ws_asset, required: true }
+      - { schemaName: ws_assignedto,     displayName: Assigned To,          type: Lookup, target: systemuser, required: true }
+      - { schemaName: ws_assignedfrom,   displayName: Assigned From,        type: DateTime, required: true }
+      - { schemaName: ws_assignedto_dt,  displayName: Assigned To Date,     type: DateTime }
+      - { schemaName: ws_notes,          displayName: Notes,                type: Memo, maxLength: 1000 }
+
+choiceSets:
+
+  - schemaName: ws_assetstatus
+    displayName: Asset Status
+    isGlobal: false
+    options:
+      - { value: 100000000, label: Available }
+      - { value: 100000001, label: Assigned }
+      - { value: 100000002, label: In Repair }
+      - { value: 100000003, label: Retired }
+      - { value: 100000004, label: Lost }
+
+relationships:
+
+  - type: 1:N
+    name: ws_assetcategory_ws_asset
+    parent: ws_assetcategory
+    child: ws_asset
+    cascade: Restrict
+    description: Category → Assets (deleting a category requires no assets reference it)
+
+  - type: 1:N
+    name: ws_asset_ws_assetassignment
+    parent: ws_asset
+    child: ws_assetassignment
+    cascade: RemoveLink
+    description: Asset → Assignment History (preserve history when asset deleted)
+
+securityRoles:
+
+  - name: Asset Reader
+    description: Read-only access to assets and categories
+    privileges:
+      - { table: ws_asset,           privileges: [Read] }
+      - { table: ws_assetcategory,   privileges: [Read] }
+      - { table: ws_assetassignment, privileges: [Read] }
+
+  - name: Asset Manager
+    description: Full management of assets within own business unit
+    privileges:
+      - { table: ws_asset,           privileges: [Read, Create, Write, Append, AppendTo], scope: BusinessUnit }
+      - { table: ws_assetcategory,   privileges: [Read],                                   scope: Organization }
+      - { table: ws_assetassignment, privileges: [Read, Create, Write],                    scope: BusinessUnit }
+
+  - name: Asset Administrator
+    description: Org-wide management including delete and category creation
+    privileges:
+      - { table: ws_asset,           privileges: [Read, Create, Write, Delete, Append, AppendTo], scope: Organization }
+      - { table: ws_assetcategory,   privileges: [Read, Create, Write, Delete, Append, AppendTo], scope: Organization }
+      - { table: ws_assetassignment, privileges: [Read, Create, Write, Delete],                   scope: Organization }

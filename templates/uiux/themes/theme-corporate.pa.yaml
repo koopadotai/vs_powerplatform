@@ -1,0 +1,17 @@
+# Corporate Theme — Conservative Blue / Grey
+# Suitable for internal tools, regulated industries, and finance.
+# Drop these formulas into App.pa.yaml's Formulas: block.
+
+# ── Color Palette ───────────────────────────────────────────────
+ColorPrimary       = RGBA(0, 90, 158, 1);          // Microsoft-blue tone
+ColorPrimaryMid    = RGBA(0, 120, 200, 1);
+ColorPrimaryBg     = RGBA(220, 232, 245, 0.5);
+ColorBg            = RGBA(243, 245, 248, 1);
+ColorCard          = RGBA(255, 255, 255, 1);
+ColorTextDark      = RGBA(34, 38, 44, 1);
+ColorTextMid       = RGBA(80, 88, 100, 1);
+ColorTextGray      = RGBA(140, 148, 158, 1);
+ColorBorder        = RGBA(220, 225, 230, 1);
+ColorError         = RGBA(196, 49, 75, 1);
+ColorWarning       = RGBA(214, 158, 46, 1);
+ColorSuccess       = RGBA(46, 134, 78, 1);
