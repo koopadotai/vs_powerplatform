@@ -37,6 +37,7 @@ yarn-error.log*
 # --- Power Platform ---
 *.zip
 !templates/**/*.zip
+!examples/**/*.zip
 *.msapp.tmp
 .canvas-cache/
 **/CanvasManifest.json.bak

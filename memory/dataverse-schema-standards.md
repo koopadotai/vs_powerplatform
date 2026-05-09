@@ -2,6 +2,43 @@
 
 ---
 
+## Deployment Format — Always Use Solution `.zip`
+
+Dataverse schema is deployed as a **solution package (`.zip`)** imported via `pac solution import`. This is the only reliable path that works across:
+- Corporate tenants with Conditional Access policies (which often block device-code auth + third-party MCP apps)
+- Local dev (uses PAC CLI's existing browser auth)
+- CI/CD (uses service principal auth)
+
+**Never hand-craft `customizations.xml`** — the format has dozens of nested required elements (DisplayMask, IntroducedVersion in 4-part form, EntityRelationshipRoles with NavigationPropertyName + RelationshipRoleType, optionset options with `ExternalValue=""` + `IsHidden="0"`, EntityKeys with `<EntityKeyAttributes><AttributeName>` structure, etc.) that aren't documented end-to-end anywhere reachable.
+
+**The recipe to build a new solution package:**
+
+1. Have user create empty solution + publisher in maker portal (`make.powerapps.com`)
+2. Hand-craft a minimal `customizations.xml` with text/datetime/memo/currency columns only (these simple types work) — pack and import for the table shells
+3. Add lookups, picklists, alternate keys via maker portal (5 min UI work — each takes 30 seconds)
+4. Export the completed solution: `pac solution export --name <X> --path <X>.zip --managed false`
+5. Commit the `.zip` as the portable artifact under `examples/<solution>/dataverse/`
+
+The `.zip` is the source of truth for redeployment to any environment.
+
+---
+
+## Hand-craft format gotchas (only for the table-shell smoke test)
+
+If you must write `customizations.xml` by hand for the minimal smoke-test step:
+
+- `RequiredLevel` is lowercase: `required`, `none`, `recommended` (NOT `SystemRequired`/`None`)
+- Primary name attribute needs `<DisplayMask>PrimaryName</DisplayMask>` — without it, Dataverse rejects the entity if multiple `nvarchar`+required attributes exist
+- DateTime fields: omit `<Format>` entirely; use only `<DateTimeBehavior>DateOnly</DateTimeBehavior>` or `UserLocal`. `Format=dateonly` is invalid.
+- `IntroducedVersion` should be `1.0.0.0` (4 parts) not `1.0`
+- Lookup attribute physical name is CamelCase (`ws_Category`), logical name is lowercase (`ws_category`); relationship name follows pattern `<referencingEntity>_<lookupName>_<referencedEntity>`
+- Picklist optionset name pattern: `<entity>_<attribute>` (e.g. `ws_asset_ws_status`)
+- EntityRelationship requires `<EntityRelationshipRoles>` with two `<EntityRelationshipRole>` children — type 1 (referenced side) has nav-pane settings, type 0 (referencing side) just has NavigationPropertyName
+- `<CascadeArchive>` is required (in addition to other cascade properties)
+- Solution.xml `<RootComponents>` lists only entities (type=1) — relationships are not separate root components
+
+---
+
 ## Table Design Principles
 
 1. **One concept per table** — A table represents a single business entity (Asset, Customer, Order)
