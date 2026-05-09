@@ -161,21 +161,21 @@ function Ensure-NpmGlobalPackage {
 
     if ($isInstalled -and $Update) {
         Write-Update "Upgrading $DisplayName via npm..."
-        try {
-            npm install -g $PackageName 2>&1 | Out-Null
+        $output = npm install -g $PackageName 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Err "Upgrade failed (exit $LASTEXITCODE): $output"
+        } else {
             Write-Success "$DisplayName upgraded"
-        } catch {
-            Write-Err "Upgrade failed: $_"
         }
         return
     }
 
     Write-Install "Installing $DisplayName via npm..."
-    try {
-        npm install -g $PackageName 2>&1 | Out-Null
+    $output = npm install -g $PackageName 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Err "Install failed (exit $LASTEXITCODE): $output"
+    } else {
         Write-Success "$DisplayName installed"
-    } catch {
-        Write-Err "Install failed: $_"
     }
 }
 

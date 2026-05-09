@@ -3,185 +3,148 @@ Screens:
     Properties:
       Fill: =ColorBg
     Children:
-
-      # ── HEADER ─────────────────────────────────────────────────
-      - rectHeader:
+      - rectCopyrightHeader:
           Control: Rectangle
           Properties:
-            X: =0
-            Y: =0
-            Width: =Parent.Width
-            Height: =HeaderH
             Fill: =ColorPrimary
-
+            Height: =HeaderH
+            Width: =Parent.Width
       - btnBack:
           Control: Button
           Properties:
-            X: =GridPadX
-            Y: =20
-            Width: =44
-            Height: =44
-            Text: ="←"
+            BasePaletteColor: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
             FontColor: =Color.White
             FontSize: =22
-            Fill: =RGBA(0, 0, 0, 0)
-            BorderThickness: =0
+            Height: =44
             OnSelect: =Navigate(MainScreen, ScreenTransition.Fade)
-
+            Text: ="←"
+            Width: =44
+            X: =GridPadX
+            Y: =20
       - lblCopyrightTitle:
           Control: Label
           Properties:
-            X: =0
-            Y: =20
-            Width: =Parent.Width
-            Height: =40
-            Text: ="About"
-            Color: =Color.White
-            Size: =FsTitle
-            FontWeight: =FontWeight.Bold
             Align: =Align.Center
-            Fill: =RGBA(0, 0, 0, 0)
-            BorderThickness: =0
-
-      - lblVersion:
+            Color: =Color.White
+            FontWeight: =FontWeight.Bold
+            Height: =40
+            Size: =FsTitle
+            Text: ="About"
+            Width: =Parent.Width
+            Y: =20
+      - lblCopyrightVersion:
           Control: Label
           Properties:
-            X: =0
-            Y: =HeaderH - 18
-            Width: =Parent.Width
-            Height: =14
-            Text: =AppVersion
-            Color: =RGBA(255, 255, 255, 0.7)
-            Size: =9
             Align: =Align.Center
-            Fill: =RGBA(0, 0, 0, 0)
-            BorderThickness: =0
-
-      # ── WELCOME CARD ───────────────────────────────────────────
+            Color: =RGBA(255, 255, 255, 0.7)
+            Height: =14
+            Size: =9
+            Text: =AppVersion
+            Width: =Parent.Width
+            Y: =HeaderH - 18
       - rectWelcomeCard:
           Control: Rectangle
           Properties:
+            Fill: =ColorCard
+            Height: =200
+            Width: =Parent.Width - (GridPadX * 2)
             X: =GridPadX
             Y: =HeaderH + 32
-            Width: =Parent.Width - (GridPadX * 2)
-            Height: =200
-            Fill: =ColorCard
-
       - lblUserAvatar:
           Control: Label
           Properties:
+            Align: =Align.Center
+            Color: =Color.White
+            Fill: =ColorPrimary
+            FontWeight: =FontWeight.Bold
+            Height: =96
+            Size: =40
+            Text: =Left(varCurrentUser.FullName, 1)
+            Width: =96
             X: =(Parent.Width - 96) / 2
             Y: =HeaderH + 56
-            Width: =96
-            Height: =96
-            Text: =Left(varCurrentUser.FullName, 1)
-            Color: =Color.White
-            Size: =40
-            FontWeight: =FontWeight.Bold
-            Align: =Align.Center
-            VerticalAlign: =VerticalAlign.Middle
-            Fill: =ColorPrimary
-            BorderThickness: =0
-
       - lblWelcomeBack:
           Control: Label
           Properties:
+            Align: =Align.Center
+            Color: =ColorTextDark
+            FontWeight: =FontWeight.Bold
+            Height: =26
+            Size: =FsSubtitle
+            Text: ="Welcome back, " & varCurrentUser.FullName
+            Width: =Parent.Width - (GridPadX * 2) - 32
             X: =GridPadX + 16
             Y: =HeaderH + 168
-            Width: =Parent.Width - (GridPadX * 2) - 32
-            Height: =26
-            Text: ="Welcome back, " & varCurrentUser.FullName
-            Color: =ColorTextDark
-            Size: =FsSubtitle
-            FontWeight: =FontWeight.Semibold
-            Align: =Align.Center
-            Fill: =RGBA(0, 0, 0, 0)
-            BorderThickness: =0
-
       - lblAppNameLine:
           Control: Label
           Properties:
+            Align: =Align.Center
+            Color: =ColorTextGray
+            Height: =22
+            Size: =FsBody
+            Text: |-
+              ="You are using: " & AppName
+            Width: =Parent.Width - (GridPadX * 2) - 32
             X: =GridPadX + 16
             Y: =HeaderH + 198
-            Width: =Parent.Width - (GridPadX * 2) - 32
-            Height: =22
-            Text: ="You are using: " & AppName
-            Color: =ColorTextGray
-            Size: =FsBody
-            Align: =Align.Center
-            Fill: =RGBA(0, 0, 0, 0)
-            BorderThickness: =0
-
-      # ── COPYRIGHT CARD ─────────────────────────────────────────
       - rectCopyrightCard:
           Control: Rectangle
           Properties:
+            Fill: =ColorCard
+            Height: =180
+            Width: =Parent.Width - (GridPadX * 2)
             X: =GridPadX
             Y: =HeaderH + 252
-            Width: =Parent.Width - (GridPadX * 2)
-            Height: =180
-            Fill: =ColorCard
-
       - lblCopyrightSymbol:
           Control: Label
           Properties:
-            X: =0
-            Y: =HeaderH + 270
-            Width: =Parent.Width
-            Height: =56
-            Text: ="©"
-            Color: =ColorPrimary
-            Size: =48
-            FontWeight: =FontWeight.Bold
             Align: =Align.Center
-            Fill: =RGBA(0, 0, 0, 0)
-            BorderThickness: =0
-
+            Color: =ColorPrimary
+            FontWeight: =FontWeight.Bold
+            Height: =56
+            Size: =48
+            Text: ="©"
+            Width: =Parent.Width
+            Y: =HeaderH + 270
       - lblCopyrightLine:
           Control: Label
           Properties:
+            Align: =Align.Center
+            Color: =ColorTextDark
+            FontWeight: =FontWeight.Bold
+            Height: =28
+            Size: =FsTitle
+            Text: ="Copyright by WeeSiong"
+            Width: =Parent.Width - (GridPadX * 2) - 32
             X: =GridPadX + 16
             Y: =HeaderH + 332
-            Width: =Parent.Width - (GridPadX * 2) - 32
-            Height: =28
-            Text: ="Copyright by WeeSiong"
-            Color: =ColorTextDark
-            Size: =FsTitle
-            FontWeight: =FontWeight.Bold
-            Align: =Align.Center
-            Fill: =RGBA(0, 0, 0, 0)
-            BorderThickness: =0
-
       - lblCopyrightYear:
           Control: Label
           Properties:
+            Align: =Align.Center
+            Color: =ColorTextGray
+            Height: =22
+            Size: =FsBody
+            Text: ="© 2026 · All rights reserved"
+            Width: =Parent.Width - (GridPadX * 2) - 32
             X: =GridPadX + 16
             Y: =HeaderH + 372
-            Width: =Parent.Width - (GridPadX * 2) - 32
-            Height: =22
-            Text: ="© 2026 · All rights reserved"
-            Color: =ColorTextGray
-            Size: =FsBody
-            Align: =Align.Center
-            Fill: =RGBA(0, 0, 0, 0)
-            BorderThickness: =0
-
-      # ── BACK BUTTON (PRIMARY) ──────────────────────────────────
       - btnBackToCalc:
           Control: Button
           Properties:
-            X: =GridPadX
-            Y: =Parent.Height - 100
-            Width: =Parent.Width - (GridPadX * 2)
-            Height: =56
-            Text: ="Back to Calculator"
-            FontColor: =Color.White
-            FontSize: =FsSubtitle
-            FontWeight: =FontWeight.Semibold
-            Fill: =ColorPrimary
-            BorderThickness: =0
-            BorderRadiusTopLeft: =28
-            BorderRadiusTopRight: =28
+            BasePaletteColor: =ColorPrimary
             BorderRadiusBottomLeft: =28
             BorderRadiusBottomRight: =28
+            BorderRadiusTopLeft: =28
+            BorderRadiusTopRight: =28
+            BorderThickness: =0
+            FontColor: =Color.White
+            FontSize: =FsSubtitle
+            FontWeight: =FontWeight.Bold
+            Height: =56
             OnSelect: =Navigate(MainScreen, ScreenTransition.Fade)
+            Text: ="Back to Calculator"
+            Width: =Parent.Width - (GridPadX * 2)
+            X: =GridPadX
+            Y: =Parent.Height - 100

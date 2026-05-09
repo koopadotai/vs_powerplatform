@@ -1,12 +1,5 @@
 App:
   Properties:
-    StartScreen: =MainScreen
-    OnStart: |-
-      =Set(varCurrentUser, User());
-      Set(varDisplay, "0");
-      Set(varStoredValue, 0);
-      Set(varOperator, "");
-      Set(varJustCalculated, false)
     Formulas: |-
       =AppName = "Calculator POC";
       AppVersion = "v1.0.0 · 2026-05-08";
@@ -46,4 +39,12 @@ App:
       GridGap    = 8;
       GridPadX   = 16;
       BtnW       = (AppWidth - (GridPadX * 2) - (GridGap * 3)) / 4;
-      BtnH       = 88
+      BtnH       = 88;
+    OnStart: |-
+      =Set(varCurrentUser, User());
+      Set(varDisplay, "0");
+      Set(varStoredValue, 0);
+      Set(varOperator, "");
+      Set(varJustCalculated, false)
+    StartScreen: =MainScreen
+    Theme: =PowerAppsTheme
