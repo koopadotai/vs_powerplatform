@@ -5,7 +5,7 @@
 .DESCRIPTION
     Wraps `pac canvas pack --layout SourceCode`.
 
-    IMPORTANT — pa.yaml SourceCode pack only works when the YAML was originally
+    IMPORTANT - pa.yaml SourceCode pack only works when the YAML was originally
     UNPACKED from a real .msapp (i.e. round-trip workflow). It cannot pack
     hand-authored YAML written from scratch.
 

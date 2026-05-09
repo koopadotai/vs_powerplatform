@@ -167,7 +167,7 @@ if ($isCanvas) {
     if ($rgbaViolations -eq 0) {
         Pass 'No hardcoded RGBA in screen files'
     } else {
-        Fail "$rgbaViolations hardcoded RGBA value(s) — use named formulas instead"
+        Fail "$rgbaViolations hardcoded RGBA value(s) - use named formulas instead"
     }
 }
 
@@ -234,7 +234,7 @@ if ($isDotnet) {
             Select-String -Pattern 'Console\.WriteLine' |
             Where-Object { $_.Line -notmatch '^\s*//' }
         if ($consoleHits) {
-            Fail 'Console.WriteLine found — use ILogger<T> instead'
+            Fail 'Console.WriteLine found - use ILogger<T> instead'
             $consoleHits | ForEach-Object { Write-Host "    $($_.Path):$($_.LineNumber)" -ForegroundColor Yellow }
         } else {
             Pass 'No Console.WriteLine in production code'

@@ -21,9 +21,9 @@
 
 .PARAMETER OutputRoot
     Where to create the project. Defaults to the right place per type:
-        canvas-app       → examples/<Name>/canvas/
-        dotnet-api       → src/<Name>/
-        dataverse-schema → templates/powerapps/dataverse/<Name>/
+        canvas-app       -> examples/<Name>/canvas/
+        dotnet-api       -> src/<Name>/
+        dataverse-schema -> templates/powerapps/dataverse/<Name>/
 
 .EXAMPLE
     .\New-Project.ps1 -Type canvas-app -Name VehicleInspection -Title "Vehicle Inspection" -Tagline "Daily safety checks"

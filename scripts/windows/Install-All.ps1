@@ -3,7 +3,7 @@
     One-click installer for the Enterprise Power Platform Developer Toolkit.
 
 .DESCRIPTION
-    Idempotent installer — checks each dependency first, skips what's already
+    Idempotent installer - checks each dependency first, skips what's already
     installed, only fetches what's missing. Re-running on a configured machine
     is fast and obviously a no-op.
 
@@ -147,7 +147,7 @@ function Ensure-NpmGlobalPackage {
     Write-Step $DisplayName
 
     if (-not (Test-Command 'npm')) {
-        Write-Err "npm not found — install Node.js LTS first"
+        Write-Err "npm not found - install Node.js LTS first"
         return
     }
 
@@ -196,7 +196,7 @@ function Ensure-ClaudePlugin {
     Write-Step $DisplayName
 
     if (-not (Test-Command 'claude')) {
-        Write-Err "Claude Code CLI not found — install it first"
+        Write-Err "Claude Code CLI not found - install it first"
         return
     }
 
@@ -215,12 +215,12 @@ function Ensure-ClaudePlugin {
         return
     }
 
-    # Add marketplace (idempotent — re-adding is safe)
+    # Add marketplace (idempotent - re-adding is safe)
     Write-Install "Adding marketplace $Marketplace..."
     try {
         & claude plugin marketplace add $Marketplace 2>&1 | Out-Null
     } catch {
-        # If already added, this errors silently — that's fine
+        # If already added, this errors silently - that's fine
     }
 
     # Install the plugin
@@ -250,7 +250,7 @@ Write-Host ""
 Write-Host "================================================================" -ForegroundColor Magenta
 Write-Host " Enterprise Power Platform Developer Toolkit - Installer" -ForegroundColor Magenta
 Write-Host "================================================================" -ForegroundColor Magenta
-if ($Update)       { Write-Host " Mode: UPDATE — will upgrade installed tools" -ForegroundColor Yellow }
+if ($Update)       { Write-Host " Mode: UPDATE - will upgrade installed tools" -ForegroundColor Yellow }
 if ($IncludeAzure) { Write-Host " Including: Azure CLI" -ForegroundColor Yellow }
 
 # --- Stage 1: Native packages via winget ---------------------------------
@@ -288,7 +288,7 @@ Ensure-ClaudePlugin `
     -PluginRef   'canvas-apps@power-platform-skills' `
     -DisplayName 'canvas-apps plugin (Microsoft)'
 
-# --- Stage 4: VS Code extensions (idempotent — re-running is safe) -------
+# --- Stage 4: VS Code extensions (idempotent - re-running is safe) -------
 
 if (-not $SkipVSCode -and (Test-Command 'code')) {
     Write-Step "VS Code extensions"
