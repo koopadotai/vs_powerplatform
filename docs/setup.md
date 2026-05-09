@@ -4,27 +4,49 @@ Detailed installation instructions. For the quick-start path, see [Onboarding](o
 
 ---
 
+## Recommended — One-click installer
+
+The toolkit ships an idempotent installer that pre-checks each tool and only installs what's missing:
+
+```powershell
+# Default install (Git + Node.js LTS + .NET 10 SDK + PAC CLI + VS Code)
+.\scripts\windows\Install-All.ps1
+
+# Re-run on a configured machine: prints SKIP for each tool, no-op
+.\scripts\windows\Install-All.ps1
+
+# Force upgrade everything
+.\scripts\windows\Install-All.ps1 -Update
+
+# Also install Azure CLI (only needed for Phase 3 deploy scripts)
+.\scripts\windows\Install-All.ps1 -IncludeAzure
+```
+
+The installer uses `Get-Command` to check whether each tool is on PATH before invoking winget. Existing tools print `[SKIP]` with the version; missing tools print `[INSTALL]`.
+
+---
+
 ## Manual Installation (if Install-All.ps1 fails)
 
-### 1. Git
+### 1. Git (required)
 ```powershell
 winget install --id Git.Git -e
 ```
 Verify: `git --version`
 
-### 2. Node.js LTS
+### 2. Node.js LTS (required — for Dataverse MCP via npx)
 ```powershell
 winget install --id OpenJS.NodeJS.LTS -e
 ```
 Verify: `node --version` and `npm --version`
 
-### 3. .NET 10 SDK
+### 3. .NET 10 SDK (required — for canvas-authoring MCP and .NET API templates)
 ```powershell
 winget install --id Microsoft.DotNet.SDK.10 -e
 ```
 Verify: `dotnet --version`
 
-### 4. Power Platform CLI
+### 4. Power Platform CLI (required)
 ```powershell
 winget install --id Microsoft.PowerPlatformCLI -e
 ```
@@ -34,13 +56,7 @@ dotnet tool install --global Microsoft.PowerApps.CLI.Tool
 ```
 Verify: `pac --version`
 
-### 5. Azure CLI
-```powershell
-winget install --id Microsoft.AzureCLI -e
-```
-Verify: `az --version`
-
-### 6. Visual Studio Code
+### 5. Visual Studio Code (required)
 ```powershell
 winget install --id Microsoft.VisualStudioCode -e
 ```
@@ -51,6 +67,15 @@ code --install-extension ms-dotnettools.csharp
 code --install-extension ms-azuretools.vscode-azurefunctions
 code --install-extension redhat.vscode-yaml
 ```
+
+### 6. Azure CLI (optional — only for Phase 3 deploy scripts)
+
+Skip this for now unless you're working on Container Apps / App Service / ACR deployments.
+
+```powershell
+winget install --id Microsoft.AzureCLI -e
+```
+Verify: `az --version`
 
 ---
 
@@ -146,4 +171,11 @@ Create `.claude/settings.local.json` for personal overrides (not committed):
 .\scripts\windows\Test-Environment.ps1
 ```
 
-All checks must pass. If any fail, see [Troubleshooting](troubleshooting.md).
+Required checks (Git, Node.js, npm, .NET SDK, PAC CLI, VS Code) must `[PASS]`.
+Azure CLI shows `[SKIP]` if not installed — that's expected unless you've opted in with `-IncludeAzure`. To require it:
+
+```powershell
+.\scripts\windows\Test-Environment.ps1 -IncludeAzure
+```
+
+If any required check fails, see [Troubleshooting](troubleshooting.md).

@@ -42,11 +42,17 @@ A reusable, GitHub-ready development framework for rapidly building enterprise-g
 ### 2. Clone & Setup
 
 ```powershell
-git clone https://github.com/koopadotai/vs_powerapp.git
-cd vs_powerapp
+git clone https://github.com/koopadotai/vs_powerplatform.git
+cd vs_powerplatform
 
-# Run the one-click installer (installs everything)
+# Idempotent — only installs what's missing. Skips already-installed tools.
 .\scripts\windows\Install-All.ps1
+
+# Optional flags:
+#   -Update         Force upgrade tools that are already present
+#   -IncludeAzure   Also install Azure CLI (Phase 3 deploys only)
+#   -SkipVSCode     Skip VS Code (already have it)
+#   -SkipWizard     Skip the post-install "what to build?" prompt
 
 # Validate your environment
 .\scripts\windows\Test-Environment.ps1
