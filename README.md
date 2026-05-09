@@ -74,23 +74,39 @@ VS Code will load the workspace with Claude Code pre-configured.
 
 ### 5. Start Building
 
-**Recommended first build — the Calculator POC.** Smallest possible app that exercises the full toolkit pipeline (hand-authored YAML → MCP → live in Studio). No data sources, no schema. Two screens.
+**Recommended first run — deploy the Calculator POC in 3 human actions + 1 Claude prompt.**
+
+This is the smallest possible end-to-end test. No data sources, no schema. Two screens. Proves the entire pipeline works on your machine.
+
+#### a. Create an empty Canvas App in Studio (browser)
+1. Open https://make.powerapps.com
+2. **+ New app → Canvas → Phone**
+3. Save (any name — it'll be overwritten with the example screens)
+4. ⚙ **Settings → Updates → Coauthoring** → toggle **ON**
+5. Copy the URL from your browser tab (contains `appid=...&environment-id=...`)
+
+#### b. Ask Claude to deploy
+
+In Claude Code, paste:
 
 ```
-/new-project canvas-app CalculatorPOC
+Deploy calculator-poc to <your-studio-url>
 ```
 
-Or browse [`examples/calculator-poc/`](examples/calculator-poc/) for the ready-made version.
+Claude (via the `/deploy-example` skill) will configure the canvas-authoring MCP, push the YAML, verify, and report back. Refresh Studio — calculator is running.
+
+---
 
 **Other starting points:**
 
-```
-/build-canvas-app "Asset management for IT equipment"
-/build-dataverse-schema "IT asset tracking with categories and assignments"
-/build-dotnet-api AssetApi
-```
+| Want to... | Do this |
+|---|---|
+| Deploy the full enterprise sample | `Deploy asset-management to <studio-url>` |
+| Generate a NEW Canvas App from a description | `/build-canvas-app "<description>"` |
+| Design a Dataverse schema | `/build-dataverse-schema "<domain>"` |
+| Scaffold a new .NET API | `/build-dotnet-api <ServiceName>` |
 
-For the end-to-end enterprise reference, browse [`examples/asset-management/`](examples/asset-management/) — Canvas + Dataverse + .NET API + ALM.
+The difference: `/deploy-example` pushes existing YAML to Studio. `/build-*` and `/new-project` generate **new** code from templates.
 
 ---
 
@@ -188,6 +204,7 @@ These slash commands are available in Claude Code once the toolkit is loaded:
 
 | Command | Purpose |
 |---|---|
+| `/deploy-example <name> <studio-url>` | **One-command deploy of an existing example to a Studio session — start here** |
 | `/configure-dataverse-mcp` | Register Microsoft's Dataverse MCP server with Claude Code (one-time per env) |
 | `/build-canvas-app <description>` | Generate a complete Canvas App from a natural-language description |
 | `/build-dataverse-schema <domain>` | Design a Dataverse table schema (uses Dataverse MCP to create tables when available) |

@@ -68,7 +68,28 @@ code --install-extension ms-azuretools.vscode-azurefunctions
 code --install-extension redhat.vscode-yaml
 ```
 
-### 6. Azure CLI (optional — only for Phase 3 deploy scripts)
+### 6. Claude Code CLI (required — for `/deploy-example` and slash commands)
+
+Installs after Node.js. Distributed as an npm global package:
+
+```powershell
+npm install -g @anthropic-ai/claude-code
+```
+
+Verify: `claude --version`
+
+### 7. canvas-apps Claude plugin (required — provides `/configure-canvas-mcp`)
+
+Microsoft's official Claude Code plugin for Power Platform. Installs after the Claude Code CLI:
+
+```powershell
+claude plugin marketplace add microsoft/power-platform-skills
+claude plugin install canvas-apps@power-platform-skills
+```
+
+Verify: `claude plugin list` should show `canvas-apps`.
+
+### 8. Azure CLI (optional — only for Phase 3 deploy scripts)
 
 Skip this for now unless you're working on Container Apps / App Service / ACR deployments.
 

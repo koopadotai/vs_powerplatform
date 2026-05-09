@@ -13,9 +13,12 @@
       - .NET 10 SDK
       - Power Platform CLI (PAC)
       - VS Code + recommended extensions
+      - Claude Code CLI               (npm install -g @anthropic-ai/claude-code)
+      - canvas-apps@power-platform-skills plugin
+        (provides /configure-canvas-mcp, /generate-canvas-app, etc.)
 
     Optional (opt-in):
-      - Azure CLI                      (-IncludeAzure)
+      - Azure CLI                     (-IncludeAzure)
 
 .PARAMETER Update
     Force re-install / upgrade tools that are already present.
@@ -32,7 +35,8 @@
 
 .NOTES
     Requires Administrator privileges.
-    Uses winget. Pre-checks each tool with Get-Command before invoking winget.
+    Uses winget for native packages, npm for Claude Code, and
+    `claude plugin` commands for the canvas-apps marketplace plugin.
 
 .EXAMPLE
     .\Install-All.ps1
@@ -60,30 +64,11 @@ function Write-Step {
     Write-Host "==> $Message" -ForegroundColor Cyan
 }
 
-function Write-Skip {
-    param([string]$Message)
-    Write-Host "    [SKIP]    $Message" -ForegroundColor DarkGray
-}
-
-function Write-Install {
-    param([string]$Message)
-    Write-Host "    [INSTALL] $Message" -ForegroundColor Yellow
-}
-
-function Write-Update {
-    param([string]$Message)
-    Write-Host "    [UPDATE]  $Message" -ForegroundColor Magenta
-}
-
-function Write-Success {
-    param([string]$Message)
-    Write-Host "    [OK]      $Message" -ForegroundColor Green
-}
-
-function Write-Err {
-    param([string]$Message)
-    Write-Host "    [ERROR]   $Message" -ForegroundColor Red
-}
+function Write-Skip    { param([string]$m) Write-Host "    [SKIP]    $m" -ForegroundColor DarkGray }
+function Write-Install { param([string]$m) Write-Host "    [INSTALL] $m" -ForegroundColor Yellow }
+function Write-Update  { param([string]$m) Write-Host "    [UPDATE]  $m" -ForegroundColor Magenta }
+function Write-Success { param([string]$m) Write-Host "    [OK]      $m" -ForegroundColor Green }
+function Write-Err     { param([string]$m) Write-Host "    [ERROR]   $m" -ForegroundColor Red }
 
 function Test-Admin {
     $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -108,12 +93,12 @@ function Get-CommandVersion {
     }
 }
 
+function Refresh-Path {
+    $env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' +
+                [System.Environment]::GetEnvironmentVariable('Path', 'User')
+}
+
 function Ensure-WingetPackage {
-    <#
-        Idempotent install:
-          - If $TestCommand resolves: skip (or upgrade if -Update)
-          - Else: winget install
-    #>
     param(
         [Parameter(Mandatory)] [string]$Id,
         [Parameter(Mandatory)] [string]$DisplayName,
@@ -127,11 +112,7 @@ function Ensure-WingetPackage {
 
     if ($isInstalled -and -not $Update) {
         $version = Get-CommandVersion -Name $TestCommand -VersionArg $VersionArg
-        if ($version) {
-            Write-Skip "$DisplayName already installed ($version)"
-        } else {
-            Write-Skip "$DisplayName already installed"
-        }
+        Write-Skip "$DisplayName already installed$(if ($version) { " ($version)" })"
         return
     }
 
@@ -155,6 +136,103 @@ function Ensure-WingetPackage {
     }
 }
 
+function Ensure-NpmGlobalPackage {
+    param(
+        [Parameter(Mandatory)] [string]$PackageName,
+        [Parameter(Mandatory)] [string]$DisplayName,
+        [Parameter(Mandatory)] [string]$TestCommand,
+        [string]$VersionArg = '--version'
+    )
+
+    Write-Step $DisplayName
+
+    if (-not (Test-Command 'npm')) {
+        Write-Err "npm not found — install Node.js LTS first"
+        return
+    }
+
+    $isInstalled = Test-Command $TestCommand
+
+    if ($isInstalled -and -not $Update) {
+        $version = Get-CommandVersion -Name $TestCommand -VersionArg $VersionArg
+        Write-Skip "$DisplayName already installed$(if ($version) { " ($version)" })"
+        return
+    }
+
+    if ($isInstalled -and $Update) {
+        Write-Update "Upgrading $DisplayName via npm..."
+        try {
+            npm install -g $PackageName 2>&1 | Out-Null
+            Write-Success "$DisplayName upgraded"
+        } catch {
+            Write-Err "Upgrade failed: $_"
+        }
+        return
+    }
+
+    Write-Install "Installing $DisplayName via npm..."
+    try {
+        npm install -g $PackageName 2>&1 | Out-Null
+        Write-Success "$DisplayName installed"
+    } catch {
+        Write-Err "Install failed: $_"
+    }
+}
+
+function Ensure-ClaudePlugin {
+    <#
+        Idempotent install of a Claude Code marketplace plugin.
+
+        Steps:
+          1. Add the marketplace if not already added
+          2. Install the plugin if not already installed
+    #>
+    param(
+        [Parameter(Mandatory)] [string]$Marketplace,   # e.g. microsoft/power-platform-skills
+        [Parameter(Mandatory)] [string]$PluginRef,     # e.g. canvas-apps@power-platform-skills
+        [Parameter(Mandatory)] [string]$DisplayName    # human-readable
+    )
+
+    Write-Step $DisplayName
+
+    if (-not (Test-Command 'claude')) {
+        Write-Err "Claude Code CLI not found — install it first"
+        return
+    }
+
+    # Check if plugin is already installed
+    try {
+        $pluginList = & claude plugin list 2>&1 | Out-String
+    } catch {
+        $pluginList = ''
+    }
+
+    $pluginShort = ($PluginRef -split '@')[0]
+    $isInstalled = ($pluginList -match [regex]::Escape($pluginShort))
+
+    if ($isInstalled -and -not $Update) {
+        Write-Skip "$DisplayName already installed"
+        return
+    }
+
+    # Add marketplace (idempotent — re-adding is safe)
+    Write-Install "Adding marketplace $Marketplace..."
+    try {
+        & claude plugin marketplace add $Marketplace 2>&1 | Out-Null
+    } catch {
+        # If already added, this errors silently — that's fine
+    }
+
+    # Install the plugin
+    Write-Install "Installing plugin $PluginRef..."
+    try {
+        & claude plugin install $PluginRef 2>&1 | Out-Null
+        Write-Success "$DisplayName installed"
+    } catch {
+        Write-Err "Plugin install failed: $_"
+    }
+}
+
 # --- Pre-flight checks ----------------------------------------------------
 
 if (-not (Test-Admin)) {
@@ -175,12 +253,12 @@ Write-Host "================================================================" -F
 if ($Update)       { Write-Host " Mode: UPDATE — will upgrade installed tools" -ForegroundColor Yellow }
 if ($IncludeAzure) { Write-Host " Including: Azure CLI" -ForegroundColor Yellow }
 
-# --- Install Core Tools (idempotent) -------------------------------------
+# --- Stage 1: Native packages via winget ---------------------------------
 
-Ensure-WingetPackage -Id 'Git.Git'                    -DisplayName 'Git'                  -TestCommand 'git'
-Ensure-WingetPackage -Id 'OpenJS.NodeJS.LTS'          -DisplayName 'Node.js LTS'          -TestCommand 'node'
-Ensure-WingetPackage -Id 'Microsoft.DotNet.SDK.10'    -DisplayName '.NET 10 SDK'          -TestCommand 'dotnet'
-Ensure-WingetPackage -Id 'Microsoft.PowerPlatformCLI' -DisplayName 'Power Platform CLI'   -TestCommand 'pac'
+Ensure-WingetPackage -Id 'Git.Git'                    -DisplayName 'Git'                -TestCommand 'git'
+Ensure-WingetPackage -Id 'OpenJS.NodeJS.LTS'          -DisplayName 'Node.js LTS'        -TestCommand 'node'
+Ensure-WingetPackage -Id 'Microsoft.DotNet.SDK.10'    -DisplayName '.NET 10 SDK'        -TestCommand 'dotnet'
+Ensure-WingetPackage -Id 'Microsoft.PowerPlatformCLI' -DisplayName 'Power Platform CLI' -TestCommand 'pac'
 
 if (-not $SkipVSCode) {
     Ensure-WingetPackage -Id 'Microsoft.VisualStudioCode' -DisplayName 'Visual Studio Code' -TestCommand 'code'
@@ -190,12 +268,27 @@ if ($IncludeAzure) {
     Ensure-WingetPackage -Id 'Microsoft.AzureCLI' -DisplayName 'Azure CLI' -TestCommand 'az'
 }
 
-# --- Refresh PATH so subsequent commands find new tools -------------------
+# --- Refresh PATH so npm + claude are findable ---------------------------
 
-$env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' +
-            [System.Environment]::GetEnvironmentVariable('Path', 'User')
+Refresh-Path
 
-# --- VS Code Extensions (idempotent — code --install-extension is safe to re-run) -
+# --- Stage 2: Node-based tools (depends on Stage 1 Node.js) --------------
+
+Ensure-NpmGlobalPackage `
+    -PackageName '@anthropic-ai/claude-code' `
+    -DisplayName 'Claude Code CLI' `
+    -TestCommand 'claude'
+
+Refresh-Path
+
+# --- Stage 3: Claude Code plugins (depends on Stage 2 claude CLI) --------
+
+Ensure-ClaudePlugin `
+    -Marketplace 'microsoft/power-platform-skills' `
+    -PluginRef   'canvas-apps@power-platform-skills' `
+    -DisplayName 'canvas-apps plugin (Microsoft)'
+
+# --- Stage 4: VS Code extensions (idempotent — re-running is safe) -------
 
 if (-not $SkipVSCode -and (Test-Command 'code')) {
     Write-Step "VS Code extensions"
@@ -225,11 +318,12 @@ if (-not $SkipVSCode -and (Test-Command 'code')) {
 Write-Step "Validating installation"
 
 $checks = @(
-    @{ Name = 'git';   Cmd = 'git --version'                       },
-    @{ Name = 'node';  Cmd = 'node --version'                      },
-    @{ Name = 'npm';   Cmd = 'npm --version'                       },
-    @{ Name = 'dotnet';Cmd = 'dotnet --version'                    },
-    @{ Name = 'pac';   Cmd = 'pac --version'                       }
+    @{ Name = 'git';          Cmd = 'git --version'                       },
+    @{ Name = 'node';         Cmd = 'node --version'                      },
+    @{ Name = 'npm';          Cmd = 'npm --version'                       },
+    @{ Name = 'dotnet';       Cmd = 'dotnet --version'                    },
+    @{ Name = 'pac';          Cmd = 'pac --version'                       },
+    @{ Name = 'claude';       Cmd = 'claude --version'                    }
 )
 
 if ($IncludeAzure) {
@@ -245,6 +339,20 @@ foreach ($check in $checks) {
         Write-Err "$($check.Name) not found in PATH"
         $failures++
     }
+}
+
+# Plugin verification (best effort)
+try {
+    $plugins = & claude plugin list 2>&1 | Out-String
+    if ($plugins -match 'canvas-apps') {
+        Write-Success "canvas-apps plugin registered"
+    } else {
+        Write-Err "canvas-apps plugin not detected in 'claude plugin list'"
+        $failures++
+    }
+} catch {
+    Write-Err "Could not verify Claude plugins"
+    $failures++
 }
 
 Write-Host ""

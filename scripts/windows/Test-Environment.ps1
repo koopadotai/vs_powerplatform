@@ -58,12 +58,28 @@ Write-Host "=============================" -ForegroundColor Cyan
 Write-Host ""
 
 $results = @()
-$results += (Test-Tool -Name 'Git'      -Command 'git --version')
-$results += (Test-Tool -Name 'Node.js'  -Command 'node --version')
-$results += (Test-Tool -Name 'npm'      -Command 'npm --version')
-$results += (Test-Tool -Name '.NET SDK' -Command 'dotnet --version')
-$results += (Test-Tool -Name 'PAC CLI'  -Command 'pac --version')
-$results += (Test-Tool -Name 'VS Code'  -Command 'code --version')
+$results += (Test-Tool -Name 'Git'        -Command 'git --version')
+$results += (Test-Tool -Name 'Node.js'    -Command 'node --version')
+$results += (Test-Tool -Name 'npm'        -Command 'npm --version')
+$results += (Test-Tool -Name '.NET SDK'   -Command 'dotnet --version')
+$results += (Test-Tool -Name 'PAC CLI'    -Command 'pac --version')
+$results += (Test-Tool -Name 'VS Code'    -Command 'code --version')
+$results += (Test-Tool -Name 'Claude CLI' -Command 'claude --version')
+
+# Plugin check (only meaningful if claude is installed)
+try {
+    $plugins = & claude plugin list 2>&1 | Out-String
+    if ($plugins -match 'canvas-apps') {
+        Write-Host ("[PASS] {0,-20} canvas-apps@power-platform-skills installed" -f 'Claude plugin') -ForegroundColor Green
+        $results += @{ Result = 'pass' }
+    } else {
+        Write-Host ("[FAIL] {0,-20} canvas-apps plugin not installed" -f 'Claude plugin') -ForegroundColor Red
+        $results += @{ Result = 'fail' }
+    }
+} catch {
+    Write-Host ("[FAIL] {0,-20} could not list plugins ({1})" -f 'Claude plugin', $_.Exception.Message) -ForegroundColor Red
+    $results += @{ Result = 'fail' }
+}
 
 if ($IncludeAzure) {
     $results += (Test-Tool -Name 'Azure CLI' -Command 'az --version')

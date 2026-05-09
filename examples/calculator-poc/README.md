@@ -42,31 +42,51 @@ The calculator is pure in-memory state — no data source needed.
 | `varOperator` | Text | Pending operator — `"+"`, `"-"`, `"*"`, `"/"`, or `""` |
 | `varJustCalculated` | Boolean | True right after `=` or operator press; clears on next digit |
 
-## Build & deploy
+## Deploy in ONE command (recommended)
 
-### Important — about PAC CLI `pack`
+If you've already run `Install-All.ps1`, the entire deploy is **3 human actions + 1 Claude prompt**:
 
-`pac canvas pack` only works on YAML that was originally **unpacked from a real `.msapp`** (round-trip). It cannot build a `.msapp` from hand-authored YAML written from scratch — Microsoft documents this limitation:
+### Step 1 — Create an empty Canvas App in Studio (browser)
+
+1. Open https://make.powerapps.com
+2. Click **+ New app → Canvas → Phone**
+3. Save it (name doesn't matter — the toolkit will overwrite the screens)
+4. Click ⚙ **Settings → Updates → Coauthoring** → toggle **ON**
+
+### Step 2 — Copy the Studio URL
+
+It's the URL in your browser tab right now. It contains `appid=...` and `environment-id=...`.
+
+### Step 3 — Ask Claude to deploy
+
+In Claude Code, paste:
+
+```
+Deploy calculator-poc to <your-studio-url>
+```
+
+That's it. Claude will:
+- Verify the canvas-apps plugin is available
+- Configure canvas-authoring MCP for your Studio URL
+- Read `examples/calculator-poc/canvas/` (App, MainScreen, CopyrightScreen)
+- Push the YAML to Studio via `mcp__canvas-authoring__compile_canvas`
+- Verify and report back
+
+Refresh Studio in your browser — the calculator is running.
+
+> Don't have Claude Code? Run `.\scripts\windows\Install-All.ps1` first — it installs the Claude Code CLI and the canvas-apps plugin needed by `/deploy-example`.
+
+---
+
+## Manual deploy (if you can't use MCP)
+
+### Why PAC CLI `pack` doesn't work on hand-authored YAML
+
+`pac canvas pack` only works on YAML that was originally **unpacked from a real `.msapp`** (round-trip). It cannot build a `.msapp` from YAML written from scratch — Microsoft documents this limitation:
 
 > "Canvas apps packed using yaml SourceCode must be validated first by opening the app for edit within the Power Apps studio."
 
-So for the toolkit's hand-authored YAML, the correct deployment path is the **canvas-authoring MCP server**, which writes YAML directly into a Studio session — no `.msapp` intermediate needed.
-
-### Deploy via MCP `compile_canvas` (recommended)
-
-1. Open https://make.powerapps.com
-2. **Create a new Canvas App** (phone form factor) named "Calculator POC"
-3. Enable coauthoring: **Settings → Updates → Coauthoring** (toggle ON)
-4. Copy the Studio URL from your browser (the one containing `appid=...` and `environment-id=...`)
-5. In Claude Code, run:
-   ```
-   /configure-canvas-mcp
-   ```
-   and paste the Studio URL when prompted
-6. Then ask Claude:
-   > Compile `examples/calculator-poc/canvas/` to Power Apps Studio.
-
-   Claude invokes `mcp__canvas-authoring__compile_canvas` — your YAML appears in Studio within seconds.
+For toolkit-authored YAML, the canvas-authoring MCP server is the only direct deploy path.
 
 ### Round-trip workflow (existing apps)
 

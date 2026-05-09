@@ -150,10 +150,24 @@ If a step would take more than ~10 minutes of work, break it into a TodoWrite li
 | User says... | You should... |
 |---|---|
 | "Set up my environment" | Run `scripts/windows/Install-All.ps1` and report what's installed |
+| **"Deploy / use / run / push / install the calculator (or any example)"** | **Use `/deploy-example <name> <studio-url>` skill — ONE command, no manual steps after that** |
+| "I just cloned this repo, what do I do?" | Tell them: (1) run `Install-All.ps1`, (2) create empty Canvas App in Studio + Coauthoring ON, (3) ask me to deploy any example |
 | "Connect to Power Platform" | Run `scripts/windows/Connect-PowerPlatform.ps1` |
-| "Create a new project" | Use `automation/New-Project.ps1` and pick a template |
+| "Create a new project (from scratch)" | Use `automation/New-Project.ps1` and pick a template — this scaffolds NEW code, doesn't touch existing examples |
+| "Build a Canvas App from a description" | Use `/build-canvas-app` skill |
+| "Build / create / design Dataverse schema" | Use `/build-dataverse-schema` skill |
+| "Configure Dataverse for me" | Use `/configure-dataverse-mcp` skill |
 | "Deploy to dev" | Use `automation/Deploy-Solution.ps1 -Environment dev` |
 | "Validate the app" | Run `automation/Test-AppStandards.ps1` |
+
+### Critical routing distinction
+
+**"Use the calculator-poc"** ≠ **"Build a calculator app"**
+
+- "Use" / "Deploy" / "Run" / "Push" the existing example → `/deploy-example` (reads what's in `examples/`, pushes to Studio)
+- "Build" / "Create" / "Make" a new app → `/build-canvas-app` or `/new-project` (generates new code)
+
+If the user is ambiguous, ASK once: "Do you want to deploy the existing example, or generate a new app from scratch?"
 
 ---
 
