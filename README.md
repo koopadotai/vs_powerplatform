@@ -74,13 +74,23 @@ VS Code will load the workspace with Claude Code pre-configured.
 
 ### 5. Start Building
 
-In Claude Code, type:
+**Recommended first build — the Calculator POC.** Smallest possible app that exercises the full toolkit pipeline (hand-authored YAML → MCP → live in Studio). No data sources, no schema. Two screens.
+
+```
+/new-project canvas-app CalculatorPOC
+```
+
+Or browse [`examples/calculator-poc/`](examples/calculator-poc/) for the ready-made version.
+
+**Other starting points:**
 
 ```
 /build-canvas-app "Asset management for IT equipment"
+/build-dataverse-schema "IT asset tracking with categories and assignments"
+/build-dotnet-api AssetApi
 ```
 
-Or browse `examples/asset-management/` for the reference implementation.
+For the end-to-end enterprise reference, browse [`examples/asset-management/`](examples/asset-management/) — Canvas + Dataverse + .NET API + ALM.
 
 ---
 
