@@ -2,7 +2,54 @@
 
 ---
 
-## Deployment Format — Always Use Solution `.zip`
+## Two Deployment Paths — Pick By Context
+
+| Path | Use when... | Trade-offs |
+|---|---|---|
+| **A. Dataverse MCP (staged build)** | Building schema interactively in a dev env. User has tenant admin consent + preview MCP enabled. | AI agent does the work conversationally. Requires staged execution (see below) — preview MCP is unstable for one-shot full-schema builds. |
+| **B. Solution `.zip` + `pac solution import`** | Distributing to other envs (test/staging/prod, teammate envs). Corporate tenants where MCP is blocked. | Reproducible, ALM-friendly, works under Conditional Access. The `.zip` is the deployable artifact. |
+
+For both, the schema spec lives in `examples/<app>/dataverse/schema.yaml` as the source of truth.
+
+---
+
+## Path A — Dataverse MCP, Staged Build (when MCP is available)
+
+**Don't ask the AI to create a full enterprise schema in one prompt.** Dataverse MCP (preview) is unstable for long orchestration chains. Failure modes: context overflow, metadata propagation race conditions, hallucinated type enums, choice/lookup/relationship dependency timing.
+
+**Required pattern — 6 staged steps:**
+
+1. **Create solution only** (no tables yet)
+2. **Create base tables** (table names + primary column only — NO lookups, choices, relationships)
+3. **Wait + verify** all tables exist before continuing (call `list_tables`)
+4. **Add simple columns** (text / date / number / memo) per table — one prompt per table
+5. **Add choice sets** separately — one prompt per choice set
+6. **Add lookup relationships LAST** — one prompt per relationship
+
+**Per-prompt limits:**
+- 1 table per prompt
+- 5–10 columns max per prompt
+- Relationships in their own prompt
+- Choice sets in their own prompt
+
+**ALWAYS include in every MCP-mediated prompt:**
+
+```
+Inside solution: <SolutionName>
+Use publisher prefix: <prefix>
+```
+
+Without `Inside solution:`, Dataverse MCP sometimes creates the table in the **Default Solution** (especially in preview mode). Without the prefix, the AI may generate a random one.
+
+**After EACH MCP step, the agent must:**
+1. Verify success (`list_tables` / `describe_table`)
+2. Wait for metadata propagation (~5–10 sec)
+3. Re-read the schema state
+4. Continue only if successful
+
+---
+
+## Path B — Solution `.zip` + `pac solution import`
 
 Dataverse schema is deployed as a **solution package (`.zip`)** imported via `pac solution import`. This is the only reliable path that works across:
 - Corporate tenants with Conditional Access policies (which often block device-code auth + third-party MCP apps)

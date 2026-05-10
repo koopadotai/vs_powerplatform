@@ -55,9 +55,57 @@ If PAC CLI is not authenticated, guide the user:
 
 ---
 
-## Step 3 — Personalize and deploy Dataverse schema
+## Step 3 — Deploy Dataverse schema
 
 **This step MUST run before Step 5 (Canvas App).** The Canvas App references Dataverse tables by exact name; deploying canvas first will produce broken bindings.
+
+Two deploy paths — **pick based on what's available in the user's env:**
+
+| Path | Use when |
+|---|---|
+| **3-MCP** — Dataverse MCP (staged build) | User has Dataverse MCP set up + tenant admin consent + preview enabled. Best for fresh dev envs. See `skills/build-dataverse-schema.md` Path A. |
+| **3-ZIP** — Personalize the .zip + `pac solution import` | Default. Works in corporate tenants where MCP is blocked. Reproducible across envs. |
+
+Detect via:
+```powershell
+claude mcp list                          # Is dataverse listed AND connected?
+pac org who                              # Confirm correct env
+```
+
+If `dataverse` shows ✓ Connected and `Create Table` is listed in its tools → 3-MCP available. Otherwise use 3-ZIP.
+
+---
+
+### Path 3-MCP — Staged build via Dataverse MCP (preferred when available)
+
+The example ships with `examples/asset-management/dataverse/schema.yaml` as the source spec. Drive the MCP from this spec using the **6-stage pattern** in `skills/build-dataverse-schema.md` Path A. **Critical rules:**
+
+- ✅ One artifact type per prompt (table, OR columns, OR choice, OR relationship)
+- ✅ One table per prompt in stage 2
+- ✅ 5–10 columns max per prompt in stage 4
+- ✅ **ALWAYS prefix every prompt with: `Inside solution: AssetManagement` + `Use publisher prefix: <prefix>`**
+- ✅ After every step: verify with `list_tables` / `describe_table`, wait ~5–10 sec for metadata propagation, then continue
+- ❌ NEVER create tables + columns + lookups + choices in a single prompt — preview MCP is unstable for long chains
+- ❌ NEVER omit "Inside solution: AssetManagement" — without it, MCP may create the table in **Default Solution** (especially preview mode)
+
+**Recommended order for asset-management:**
+1. Solution shell only (no tables)
+2. Tables (one prompt each): Asset Category → Asset → Asset Assignment
+3. Verify all 3 tables exist
+4. Simple columns per table (one prompt per table — text/date/memo/currency)
+5. Choice set `ws_assetstatus` (separate prompt)
+6. Relationships LAST (one prompt per lookup):
+   - ws_assetcategory → ws_asset (required, Restrict)
+   - ws_asset → ws_assetassignment (required, RemoveLink)
+   - SystemUser → ws_asset (optional, NoCascade)
+   - SystemUser → ws_assetassignment (required, NoCascade)
+7. Alternate key on `ws_asset.ws_serialnumber`
+
+After all stages: `pac solution export --name AssetManagement --path AssetManagement.zip --managed false` to capture the portable artifact.
+
+---
+
+### Path 3-ZIP — Personalize and import the .zip
 
 The example ships with a placeholder publisher (`WeeSiongDev`, prefix `ws`). Before importing into a team member's env, the AI agent **personalizes** the solution to use their publisher + prefix — so they don't inherit a foreign publisher and the tables match their org's naming standards. This is automatic — the team member never edits XML.
 
