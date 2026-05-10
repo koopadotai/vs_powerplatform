@@ -38,15 +38,23 @@ Write-Host "      2 screens (calculator + copyright). Perfect for trying"
 Write-Host "      the PAC CLI -> MCP build pipeline end-to-end."
 Write-Host ""
 Write-Host "  [2] " -NoNewline -ForegroundColor Cyan
+Write-Host "Asset Management " -NoNewline -ForegroundColor White
+Write-Host "(end-to-end reference)" -ForegroundColor Yellow
+Write-Host "      Complete enterprise sample: Dataverse schema + Canvas App"
+Write-Host "      packaged in ONE solution. Auto-personalized for your env"
+Write-Host "      (your publisher, your prefix). 5 screens, 3 tables, choice"
+Write-Host "      set, 4 relationships, alternate key."
+Write-Host ""
+Write-Host "  [3] " -NoNewline -ForegroundColor Cyan
 Write-Host "Custom project" -ForegroundColor White
 Write-Host "      Pick a template: canvas-app | dotnet-api | dataverse-schema"
 Write-Host ""
-Write-Host "  [3] " -NoNewline -ForegroundColor Cyan
+Write-Host "  [4] " -NoNewline -ForegroundColor Cyan
 Write-Host "Skip" -ForegroundColor White
 Write-Host "      I'll start manually later"
 Write-Host ""
 
-$choice = Read-Host "Choose (1/2/3)"
+$choice = Read-Host "Choose (1/2/3/4)"
 
 switch ($choice) {
     '1' {
@@ -89,6 +97,49 @@ switch ($choice) {
 
     '2' {
         Write-Host ""
+        Write-Host "Asset Management - end-to-end deployment" -ForegroundColor Cyan
+        Write-Host ""
+        $amPath = Join-Path $RepoRoot 'examples\asset-management'
+        if (-not (Test-Path $amPath)) {
+            Write-Host "[ERROR] Asset Management source not found at $amPath" -ForegroundColor Red
+            exit 1
+        }
+
+        Write-Host "Source: $amPath\"
+        Write-Host "  - dataverse\AssetManagement.zip  (portable solution package)"
+        Write-Host "  - canvas\*.pa.yaml                (5 Canvas App screens)"
+        Write-Host "  - automation\Personalize-AssetManagement.ps1  (auto-personalizer)"
+        Write-Host ""
+        Write-Host "================================================================" -ForegroundColor Green
+        Write-Host " Ready to deploy Asset Management to your environment!" -ForegroundColor Green
+        Write-Host "================================================================" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "Next steps:" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "  1. Authenticate to your Dataverse env (one-time):"
+        Write-Host "     .\scripts\windows\Connect-PowerPlatform.ps1"
+        Write-Host ""
+        Write-Host "  2. Open Claude Code:"
+        Write-Host "     claude code"
+        Write-Host ""
+        Write-Host "  3. In the Claude Code session, type:"
+        Write-Host "     deploy asset-management"
+        Write-Host ""
+        Write-Host "The AI agent will then:"
+        Write-Host "  - Ask for your publisher info + prefix (e.g. ContosoCorp / ctso)"
+        Write-Host "  - Personalize the .zip and Canvas YAML files for your env"
+        Write-Host "  - Import the Dataverse schema (3 tables + relationships + key)"
+        Write-Host "  - Prompt you to create an empty Canvas App INSIDE the solution"
+        Write-Host "  - Compile the personalized canvas screens to that app"
+        Write-Host ""
+        Write-Host "Result: ONE solution containing both Dataverse + Canvas App."
+        Write-Host "Re-deploy elsewhere with:  pac solution export --name <Name>" -ForegroundColor DarkGray
+        Write-Host ""
+        Write-Host "Full instructions: examples\asset-management\README.md" -ForegroundColor Cyan
+    }
+
+    '3' {
+        Write-Host ""
         Write-Host "Custom project" -ForegroundColor Cyan
         Write-Host ""
         Write-Host "Available types:"
@@ -107,7 +158,7 @@ switch ($choice) {
         }
     }
 
-    '3' {
+    '4' {
         Write-Host ""
         Write-Host "Skipped. To start later, run:" -ForegroundColor Yellow
         Write-Host "  .\scripts\windows\Start-Toolkit.ps1"

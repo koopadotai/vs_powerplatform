@@ -38,59 +38,75 @@ asset-management/
 | Backend | ASP.NET Core 10 (for reporting/integrations) |
 | Auth | Microsoft Entra ID |
 
-## Quick start (recommended path)
+## Quick start — for any team member, any environment
 
-The toolkit uses **two MCP servers** (canvas-authoring + Dataverse) so Claude can build the entire app — schema and screens — by reading `schema.yaml` and the `.pa.yaml` files. See [`memory/powerplatform-mcp-framework.md`](../../memory/powerplatform-mcp-framework.md) for the full framework overview.
+After cloning this repo and running `.\scripts\windows\Install-All.ps1`, a teammate can deploy this entire example in their own Power Platform environment. The AI agent (Claude Code) handles the personalization automatically — they will **NOT** inherit the source publisher (`WeeSiongDev`) or prefix (`ws_`). They get their own publisher and prefix in their own tenant.
 
-### 1. Configure Dataverse MCP (one-time per dev/env)
+### Prerequisites (one-time)
 
-In Claude Code:
+```powershell
+# 1. Tools (does Git, Node, .NET, PAC CLI, VS Code, Claude Code CLI, etc.)
+.\scripts\windows\Install-All.ps1
 
+# 2. Sign in to your Power Platform environment
+.\scripts\windows\Connect-PowerPlatform.ps1
 ```
-/configure-dataverse-mcp
+
+### Deploy the example
+
+```powershell
+# 3. Open Claude Code (the AI agent)
+claude code
+
+# 4. In the Claude Code session, type:
+deploy asset-management
 ```
 
-This registers the `@microsoft/dataverse` MCP server with your environment, with the `--preview` flag so Claude can create schema (tables/columns/choices/relationships).
+The AI agent will then walk you through 4 things:
 
-### 2. Auto-create the Dataverse schema
+1. **Personalize** — asks for your publisher unique name, display name, and prefix (e.g. "Contoso", "Contoso Ltd", "ctso")
+2. **Auto-deploy Dataverse** — runs `Personalize-AssetManagement.ps1` and `pac solution import` (the .zip in `dataverse/AssetManagement.zip` is the deployable artifact)
+3. **Prompts you** — to create an empty Canvas App **inside the imported solution** in maker portal (this step requires the browser; Microsoft does not expose an API for it)
+4. **Auto-compile Canvas YAML** — pushes the personalized screens (rewritten with your prefix) into the Studio session
 
-In Claude Code, ask:
+After that: refresh Studio, add the Dataverse tables as data sources, and the app is live.
 
-> Read `examples/asset-management/dataverse/schema.yaml` and create the tables in Dataverse.
+### Critical: Canvas App must live INSIDE the solution
 
-Claude calls the Dataverse MCP create tools and produces:
-- `ws_assetcategory` (table + 3 columns)
-- `ws_asset` (table + 9 columns + lookup to category + lookup to systemuser)
-- `ws_assetassignment` (table + 6 columns)
-- `ws_assetstatus` (choice set, 5 options)
-- 2 relationships (1:N: category→assets, 1:N: asset→assignments)
+When the AI prompts you to create the Canvas App, follow these steps **exactly** so the app becomes part of the solution (not a standalone app):
 
-It will report which were created and any failures.
+1. https://make.powerapps.com → **Solutions** (left rail)
+2. Click your imported solution (e.g. "Asset Management")
+3. **+ New** → **App** → **Canvas app** → Phone form factor, name "Asset Management"
+4. Click **Create** — this places the app inside the solution
 
-### 3. Configure canvas-authoring MCP for the new app
+> **Why this matters:** Power Platform allows Canvas Apps as standalone OR as solution components. Standalone apps are NOT included in `pac solution export`. By creating inside the solution, your one solution `.zip` contains both the Dataverse schema AND the Canvas App — a single deployable unit.
 
-1. https://make.powerapps.com → New Canvas App (phone) → name it "Asset Management"
-2. Settings → Updates → Coauthoring → ON
-3. Copy the Studio URL
-4. In Claude Code: `/configure-canvas-mcp` (paste URL when prompted)
+### Result — one solution, complete and portable
 
-### 4. Push the canvas app
+After deployment, in maker portal → Solutions → your solution, you'll see:
+- 3 tables (`<prefix>_assetcategory`, `<prefix>_asset`, `<prefix>_assetassignment`)
+- 1 choice column with 5 options (`<prefix>_status`)
+- 4 relationships
+- 1 Canvas App ("Asset Management")
+- 1 alternate key on serial number
 
-In Claude Code:
+To redeploy this entire stack to another env (test, prod, another tenant):
 
-> Compile `examples/asset-management/canvas/` to Studio.
+```powershell
+# Export the complete solution (Dataverse + Canvas in one zip)
+pac solution export --name AssetManagement --path AssetManagement-prod.zip --managed false
 
-Claude invokes `mcp__canvas-authoring__compile_canvas`. Within seconds, the home screen, asset list, detail, and edit screens appear in your Studio session.
+# Import to the other env
+pac auth select --index <other-env-profile>
+pac solution import --path AssetManagement-prod.zip --publish-changes
+```
 
-### 5. Add the data sources to the app
+### Re-deploying the original ws-prefixed `.zip` (for quick demo)
 
-In Power Apps Studio → **Data → + Add data**:
-- Search "Assets" → Add
-- Search "Asset Categories" → Add
+If you just want to see the example running quickly without your own publisher, you can directly import `dataverse/AssetManagement.zip` — but this will create the publisher **"Wee Siong Dev"** in your env (foreign publisher). For real use, always go through the AI agent personalization flow above.
 
-The app immediately becomes functional — KPI counts populate, search works, you can add/edit/delete assets.
-
-### 6. (Optional) Run the .NET reporting API locally
+### (Optional) Run the .NET reporting API locally
 
 ```powershell
 cd examples\asset-management\api\AssetApi

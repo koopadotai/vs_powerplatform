@@ -158,22 +158,31 @@ If yes:
 
 ### 5A — Confirm human-only steps
 
+The Canvas App MUST be created **inside the personalized solution** so everything ships as a single deployable unit. If created outside the solution, `pac solution export` won't include it and team-to-team handoff breaks.
+
 Ask the user to confirm before proceeding:
 
-- [ ] Empty Canvas App created in Studio (phone form factor, any name)
+- [ ] Empty Canvas App created **inside the personalized solution** (e.g. `AssetManagement` if they used default name) — phone form factor, name "Asset Management"
 - [ ] **Coauthoring is ON** — Studio → Settings → Updates → Coauthoring
 - [ ] Studio URL copied (must contain `appid=...`)
 
-If not done, give the checklist:
+If not done, give this exact checklist (substitute `<SolutionDisplayName>` with the name from Step 3, e.g. "Asset Management"):
 
 ```
 1. Open https://make.powerapps.com
-2. Click "+ New app" → Canvas → Phone layout
-3. Save (any name)
-4. Gear icon → Settings → Updates → toggle Coauthoring ON
-5. Copy the URL from your browser tab
-6. Paste it here
+2. Solutions (left rail) → click "<SolutionDisplayName>" (the one we just imported)
+3. Click "+ New" → "App" → "Canvas app"
+4. Choose: Phone form factor, name "Asset Management"
+5. Click "Create" — this places the app INSIDE the solution (vs creating
+   it standalone outside the solution, which would break the export)
+6. Once Studio opens: Settings (gear) → Updates → toggle Coauthoring ON
+7. Copy the URL from your browser tab — must contain appid=...
+8. Paste it here
 ```
+
+> **Why "inside the solution" matters:** Power Platform allows Canvas Apps to live as standalone components OR as members of a solution. Standalone apps are NOT exported when you run `pac solution export`. By creating the app inside the solution from the start, you guarantee that one `pac solution export` command produces a `.zip` containing both the Dataverse schema AND the Canvas App — a single deployable unit.
+
+> **How to verify it's inside the solution:** After creating, in maker portal go to Solutions → AssetManagement → Objects → Apps. The new Canvas App should be listed there. If it's NOT listed and only appears under "Apps" (top-level), you created it outside the solution — delete it and redo from step 2.
 
 ### 5B — Configure canvas-authoring MCP
 
@@ -220,31 +229,30 @@ If Dataverse MCP is available, you can call `mcp__canvas-authoring__list_data_so
 
 ## Step 7 — Report
 
-Final response to the user:
+Substitute `<prefix>` with the actual prefix the user chose in Step 3 (e.g. `ctso`):
 
 ```
-✓ Dataverse schema created
-  - Tables : ws_assetcategory, ws_asset, ws_assetassignment
-  - Choices : ws_assetstatus (5 options)
-  - Relationships : 4
-  - Alternate key : ws_serialnumber (unique)
-  - Views : 5 public views
+✓ Dataverse schema deployed (publisher: <PublisherDisplayName>, prefix: <prefix>)
+  - Tables       : <prefix>_assetcategory, <prefix>_asset, <prefix>_assetassignment
+  - Choices      : <prefix>_status (5 options)
+  - Relationships: 4
+  - Alternate key: <prefix>_serialnumber (unique)
 
 ✓ Seed data imported (if requested)
   - Categories : 5
   - Assets     : 10 (all statuses covered)
 
-✓ Canvas App compiled to Studio
+✓ Canvas App compiled to Studio (INSIDE the <SolutionDisplayName> solution)
   - Screens : HomeScreen, AssetListScreen, AssetDetailScreen, AssetEditScreen
+
+Everything is in ONE solution — to redeploy elsewhere or back up:
+  pac solution export --name <SolutionUniqueName> --path <SolutionUniqueName>.zip --managed false
 
 Next steps:
   1. Refresh Studio in your browser
-  2. Add data sources: Assets + Asset Categories (Data → + Add data)
+  2. Add data sources: <prefix>_asset + <prefix>_assetcategory (Data → + Add data)
   3. Play the app
   4. Assign security roles in Power Platform Admin Center
-     - Asset Reader   → end users
-     - Asset Manager  → IT staff
-     - Asset Administrator → admins
 ```
 
 ---
