@@ -10,7 +10,7 @@ Screens:
     Children:
 
       # ── HEADER ─────────────────────────────────────────────────
-      - rectHeader:
+      - rectEditHeader:
           Control: Rectangle
           Properties:
             X: =0
@@ -29,11 +29,11 @@ Screens:
             Text: ="Cancel"
             FontColor: =Color.White
             FontSize: =FsBody
-            Fill: =RGBA(0, 0, 0, 0)
+            BasePaletteColor: =RGBA(0, 0, 0, 0)
             BorderThickness: =0
             OnSelect: =Back()
 
-      - lblTitle:
+      - lblEditTitle:
           Control: Label
           Properties:
             X: =80
@@ -70,15 +70,15 @@ Screens:
             Y: =HeaderH + SpMedium + 24
             Width: =Parent.Width - (SpMedium * 2)
             Height: =44
-            HintText: ="e.g. Dell XPS 13"
-            Default: =Coalesce(varEditingAsset.ws_assetname, "")
+            Placeholder: ="e.g. Dell XPS 13"
+            Value: =Coalesce(varEditingAsset.ws_assetname, "")
             Fill: =ColorCard
             BorderColor: =ColorBorder
             BorderThickness: =1
             FontSize: =FsBody
-            Color: =ColorTextDark
+            FontColor: =ColorTextDark
 
-      - lblSerialLabel:
+      - lblEditSerialLabel:
           Control: Label
           Properties:
             X: =SpMedium
@@ -99,15 +99,15 @@ Screens:
             Y: =HeaderH + 114
             Width: =Parent.Width - (SpMedium * 2)
             Height: =44
-            HintText: ="e.g. SN-12345-ABCD"
-            Default: =Coalesce(varEditingAsset.ws_serialnumber, "")
+            Placeholder: ="e.g. SN-12345-ABCD"
+            Value: =Coalesce(varEditingAsset.ws_serialnumber, "")
             Fill: =ColorCard
             BorderColor: =ColorBorder
             BorderThickness: =1
             FontSize: =FsBody
-            Color: =ColorTextDark
+            FontColor: =ColorTextDark
 
-      - lblCategoryLabel:
+      - lblEditCategoryLabel:
           Control: Label
           Properties:
             X: =SpMedium
@@ -129,7 +129,7 @@ Screens:
             Width: =Parent.Width - (SpMedium * 2)
             Height: =44
             Items: ='Asset Categories'
-            DefaultSelectedItems: =[varEditingAsset.ws_categoryid]
+            DefaultSelectedItems: =[varEditingAsset.ws_Category]
             SelectMultiple: =false
             Fill: =ColorCard
 
@@ -171,25 +171,25 @@ Screens:
             FontColor: =Color.White
             FontSize: =FsSubtitle
             FontWeight: =FontWeight.Semibold
-            Fill: =ColorPrimary
+            BasePaletteColor: =ColorPrimary
             BorderThickness: =0
             BorderRadiusTopLeft: =28
             BorderRadiusTopRight: =28
             BorderRadiusBottomLeft: =28
             BorderRadiusBottomRight: =28
-            DisplayMode: =If(Len(txtName.Text) > 0 And Len(txtSerial.Text) > 0 And !IsBlank(cmbCategory.Selected) And !IsBlank(cmbStatus.Selected), DisplayMode.Edit, DisplayMode.Disabled)
+            DisplayMode: =If(Len(txtName.Value) > 0 And Len(txtSerial.Value) > 0 And !IsBlank(cmbCategory.Selected) And !IsBlank(cmbStatus.Selected), DisplayMode.Edit, DisplayMode.Disabled)
             OnSelect: |-
               =IfError(
                 Patch('Assets',
                   If(IsBlank(varEditingAsset.ws_assetname), Defaults('Assets'), varEditingAsset),
                   {
-                    ws_assetname: txtName.Text,
-                    ws_serialnumber: txtSerial.Text,
-                    ws_categoryid: cmbCategory.Selected,
-                    ws_status: cmbStatus.Selected
+                    ws_assetname: txtName.Value,
+                    ws_serialnumber: txtSerial.Value,
+                    ws_Category: cmbCategory.Selected,
+                    ws_status: cmbStatus.Selected.Value
                   }
                 );
                 Notify("Saved", NotificationType.Success);
-                Navigate(AssetListScreen, ScreenTransition.CoverLeft),
+                Navigate(AssetListScreen, ScreenTransition.UnCover),
                 Notify("Save failed: " & FirstError.Message, NotificationType.Error)
               )

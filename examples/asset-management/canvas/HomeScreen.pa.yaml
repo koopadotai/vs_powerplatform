@@ -5,7 +5,7 @@ Screens:
     Children:
 
       # ── HEADER ─────────────────────────────────────────────────
-      - rectHeader:
+      - rectHomeHeader:
           Control: Rectangle
           Properties:
             X: =0
@@ -14,7 +14,7 @@ Screens:
             Height: =HeaderH
             Fill: =ColorPrimary
 
-      - lblTitle:
+      - lblHomeTitle:
           Control: Label
           Properties:
             X: =0
@@ -60,7 +60,7 @@ Screens:
             Y: =HeaderH + SpMedium + 14
             Width: =(Parent.Width - (SpMedium * 3)) / 2
             Height: =44
-            Text: =Text(CountRows('Assets'))
+            Text: =Text(CountIf('Assets', true))
             Color: =ColorPrimary
             Size: =FsHeadline
             FontWeight: =FontWeight.Bold
@@ -99,7 +99,7 @@ Screens:
             Y: =HeaderH + SpMedium + 14
             Width: =(Parent.Width - (SpMedium * 3)) / 2
             Height: =44
-            Text: =Text(CountIf('Assets', ws_status.'Asset Status' = "Assigned"))
+            Text: =Text(CountIf('Assets', ws_status = 'Status (Assets)'.Assigned))
             Color: =ColorSuccess
             Size: =FsHeadline
             FontWeight: =FontWeight.Bold
@@ -148,7 +148,7 @@ Screens:
             FontColor: =Color.White
             FontSize: =FsSubtitle
             FontWeight: =FontWeight.Semibold
-            Fill: =ColorPrimary
+            BasePaletteColor: =ColorPrimary
             BorderThickness: =0
             BorderRadiusTopLeft: =28
             BorderRadiusTopRight: =28
@@ -167,7 +167,7 @@ Screens:
             FontColor: =ColorPrimary
             FontSize: =FsSubtitle
             FontWeight: =FontWeight.Semibold
-            Fill: =ColorCard
+            BasePaletteColor: =ColorCard
             BorderColor: =ColorPrimary
             BorderThickness: =2
             BorderRadiusTopLeft: =28
@@ -178,8 +178,28 @@ Screens:
               =Set(varEditingAsset, Defaults('Assets'));
               Navigate(AssetEditScreen, ScreenTransition.CoverRight)
 
+      - btnManageCategories:
+          Control: Button
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 298
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =56
+            Text: ="🏷️  Manage Categories"
+            FontColor: =ColorPrimary
+            FontSize: =FsSubtitle
+            FontWeight: =FontWeight.Semibold
+            BasePaletteColor: =ColorCard
+            BorderColor: =ColorPrimary
+            BorderThickness: =2
+            BorderRadiusTopLeft: =28
+            BorderRadiusTopRight: =28
+            BorderRadiusBottomLeft: =28
+            BorderRadiusBottomRight: =28
+            OnSelect: =Navigate(CategoryListScreen, ScreenTransition.CoverRight)
+
       # ── BOTTOM NAVIGATION ───────────────────────────────────────
-      - rectNavBg:
+      - rectHomeNavBg:
           Control: Rectangle
           Properties:
             X: =0
@@ -188,7 +208,7 @@ Screens:
             Height: =NavBarH
             Fill: =ColorCard
 
-      - btnNavHome:
+      - btnHomeNavHome:
           Control: Button
           Properties:
             X: =0
@@ -199,10 +219,10 @@ Screens:
             FontColor: =ColorPrimary
             FontSize: =FsCaption
             FontWeight: =FontWeight.Semibold
-            Fill: =ColorCard
+            BasePaletteColor: =ColorCard
             BorderThickness: =0
 
-      - btnNavList:
+      - btnHomeNavList:
           Control: Button
           Properties:
             X: =Parent.Width / 2
@@ -212,6 +232,6 @@ Screens:
             Text: ="📋" & Char(10) & "Assets"
             FontColor: =ColorTextGray
             FontSize: =FsCaption
-            Fill: =ColorCard
+            BasePaletteColor: =ColorCard
             BorderThickness: =0
             OnSelect: =Navigate(AssetListScreen, ScreenTransition.Fade)

@@ -1,0 +1,400 @@
+Screens:
+  CategoryListScreen:
+    Properties:
+      Fill: =ColorBg
+      OnVisible: |-
+        =Set(varEditingCategory, Defaults('Asset Categories'));
+        Set(varSelectedIcon, "");
+        Reset(txtCategoryName);
+        Reset(txtCategoryDescription)
+    Children:
+
+      # ── HEADER ─────────────────────────────────────────────────
+      - rectCatHeader:
+          Control: Rectangle
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =HeaderH
+            Fill: =ColorPrimary
+
+      - btnCatBack:
+          Control: Button
+          Properties:
+            X: =SpMedium
+            Y: =SpMedium + 4
+            Width: =60
+            Height: =44
+            Text: ="Back"
+            FontColor: =Color.White
+            FontSize: =FsBody
+            BasePaletteColor: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+            OnSelect: =Back()
+
+      - lblCatTitle:
+          Control: Label
+          Properties:
+            X: =80
+            Y: =20
+            Width: =Parent.Width - 160
+            Height: =40
+            Text: ="Categories"
+            Color: =Color.White
+            Size: =FsTitle
+            FontWeight: =FontWeight.Bold
+            Align: =Align.Center
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      # ── EXISTING CATEGORIES ─────────────────────────────────────
+      - lblCatListLabel:
+          Control: Label
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + SpSmall
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =22
+            Text: ="EXISTING CATEGORIES"
+            Color: =ColorTextGray
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - galCategories:
+          Control: Gallery
+          Variant: Vertical
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 32
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =160
+            Items: =SortByColumns('Asset Categories', "ws_categoryname", SortOrder.Ascending)
+            TemplateSize: =60
+            TemplateFill: =If(ThisItem.ws_assetcategoryid = varEditingCategory.ws_assetcategoryid, ColorPrimaryBg, ColorCard)
+            ShowScrollbar: =true
+            OnSelect: |-
+              =Set(varEditingCategory, ThisItem);
+              Set(varSelectedIcon, Coalesce(ThisItem.ws_icon, ""));
+              Reset(txtCategoryName);
+              Reset(txtCategoryDescription)
+          Children:
+            - lblCatIcon:
+                Control: Label
+                Properties:
+                  X: =SpSmall
+                  Y: =SpSmall
+                  Width: =40
+                  Height: =44
+                  Text: =Coalesce(ThisItem.ws_icon, "📦")
+                  Size: =FsHeadline
+                  Align: =Align.Center
+                  VerticalAlign: =VerticalAlign.Middle
+                  Fill: =RGBA(0, 0, 0, 0)
+                  BorderThickness: =0
+
+            - lblCatName:
+                Control: Label
+                Properties:
+                  X: =56
+                  Y: =SpSmall
+                  Width: =Parent.TemplateWidth - 100
+                  Height: =22
+                  Text: =ThisItem.ws_categoryname
+                  Color: =ColorTextDark
+                  Size: =FsBody
+                  FontWeight: =FontWeight.Semibold
+                  Fill: =RGBA(0, 0, 0, 0)
+                  BorderThickness: =0
+
+            - lblCatDesc:
+                Control: Label
+                Properties:
+                  X: =56
+                  Y: =SpSmall + 24
+                  Width: =Parent.TemplateWidth - 100
+                  Height: =20
+                  Text: =Coalesce(ThisItem.ws_description, "")
+                  Color: =ColorTextGray
+                  Size: =FsCaption
+                  Fill: =RGBA(0, 0, 0, 0)
+                  BorderThickness: =0
+
+            - btnDeleteCat:
+                Control: Button
+                Properties:
+                  X: =Parent.TemplateWidth - 44
+                  Y: =SpSmall
+                  Width: =36
+                  Height: =44
+                  Text: ="🗑"
+                  FontColor: =ColorError
+                  FontSize: =FsSubtitle
+                  BasePaletteColor: =RGBA(0, 0, 0, 0)
+                  BorderThickness: =0
+                  OnSelect: |-
+                    =IfError(
+                      Remove('Asset Categories', ThisItem);
+                      Set(varEditingCategory, Defaults('Asset Categories'));
+                      Set(varSelectedIcon, "");
+                      Reset(txtCategoryName);
+                      Reset(txtCategoryDescription);
+                      Notify("Category deleted", NotificationType.Success),
+                      Notify("Delete failed: " & FirstError.Message, NotificationType.Error)
+                    )
+
+      - lblNoCategories:
+          Control: Label
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 90
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =40
+            Text: ="No categories yet — add one below"
+            Color: =ColorTextGray
+            Size: =FsBody
+            Align: =Align.Center
+            Visible: =CountIf('Asset Categories', true) = 0
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      # ── ADD / EDIT CATEGORY FORM ────────────────────────────────
+      - lblFormHeader:
+          Control: Label
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 208
+            Width: =(Parent.Width - (SpMedium * 2)) * 0.6
+            Height: =22
+            Text: =If(IsBlank(varEditingCategory.ws_assetcategoryid), "ADD NEW CATEGORY", "EDIT CATEGORY")
+            Color: =ColorTextGray
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - btnNewCategory:
+          Control: Button
+          Properties:
+            X: =Parent.Width - 100 - SpMedium
+            Y: =HeaderH + 202
+            Width: =100
+            Height: =28
+            Text: ="+ New"
+            FontColor: =ColorPrimary
+            FontSize: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            BasePaletteColor: =RGBA(0, 0, 0, 0)
+            BorderColor: =ColorPrimary
+            BorderThickness: =1
+            BorderRadiusTopLeft: =14
+            BorderRadiusTopRight: =14
+            BorderRadiusBottomLeft: =14
+            BorderRadiusBottomRight: =14
+            Visible: =!IsBlank(varEditingCategory.ws_assetcategoryid)
+            OnSelect: |-
+              =Set(varEditingCategory, Defaults('Asset Categories'));
+              Set(varSelectedIcon, "");
+              Reset(txtCategoryName);
+              Reset(txtCategoryDescription)
+
+      - lblCatNameLabel:
+          Control: Label
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 238
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =20
+            Text: ="Category Name *"
+            Color: =ColorTextMid
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - txtCategoryName:
+          Control: TextInput
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 260
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =40
+            Value: =Coalesce(varEditingCategory.ws_categoryname, "")
+            Placeholder: ="e.g. Laptops"
+            Fill: =ColorCard
+            BorderColor: =ColorBorder
+            BorderThickness: =1
+            FontSize: =FsBody
+            FontColor: =ColorTextDark
+
+      - lblCatDescLabel:
+          Control: Label
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 308
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =20
+            Text: ="Description"
+            Color: =ColorTextMid
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - txtCategoryDescription:
+          Control: TextInput
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 330
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =40
+            Value: =Coalesce(varEditingCategory.ws_description, "")
+            Placeholder: ="Short description"
+            Fill: =ColorCard
+            BorderColor: =ColorBorder
+            BorderThickness: =1
+            FontSize: =FsBody
+            FontColor: =ColorTextDark
+
+      - lblCatIconLabel:
+          Control: Label
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 378
+            Width: =Parent.Width - (SpMedium * 2) - 60
+            Height: =20
+            Text: ="Icon"
+            Color: =ColorTextMid
+            Size: =FsCaption
+            FontWeight: =FontWeight.Semibold
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - lblSelectedIcon:
+          Control: Label
+          Properties:
+            X: =Parent.Width - SpMedium - 56
+            Y: =HeaderH + 372
+            Width: =48
+            Height: =32
+            Text: =Coalesce(varSelectedIcon, "—")
+            Color: =ColorTextDark
+            Size: =FsTitle
+            Align: =Align.Center
+            VerticalAlign: =VerticalAlign.Middle
+            Fill: =RGBA(0, 0, 0, 0)
+            BorderThickness: =0
+
+      - galEmojiPicker:
+          Control: Gallery
+          Variant: Horizontal
+          Properties:
+            X: =SpMedium
+            Y: =HeaderH + 400
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =56
+            TemplateSize: =56
+            Items: |-
+              =Table(
+                {Emoji: "💻"}, {Emoji: "📱"}, {Emoji: "🖥️"}, {Emoji: "🖨️"},
+                {Emoji: "⌨️"}, {Emoji: "🖱️"}, {Emoji: "📷"}, {Emoji: "🎧"},
+                {Emoji: "📺"}, {Emoji: "🪑"}, {Emoji: "🛠️"}, {Emoji: "🔧"},
+                {Emoji: "🚗"}, {Emoji: "📦"}, {Emoji: "🏷️"}, {Emoji: "📋"}
+              )
+            TemplateFill: =If(ThisItem.Emoji = varSelectedIcon, ColorPrimaryBg, ColorCard)
+            ShowScrollbar: =true
+            OnSelect: =Set(varSelectedIcon, ThisItem.Emoji)
+          Children:
+            - btnEmojiCell:
+                Control: Button
+                Properties:
+                  X: =0
+                  Y: =0
+                  Width: =56
+                  Height: =56
+                  Text: =ThisItem.Emoji
+                  FontSize: =FsTitle
+                  FontColor: =ColorTextDark
+                  Align: =Align.Center
+                  BasePaletteColor: =If(ThisItem.Emoji = varSelectedIcon, ColorPrimaryBg, ColorCard)
+                  BorderColor: =If(ThisItem.Emoji = varSelectedIcon, ColorPrimary, ColorBorder)
+                  BorderThickness: =1
+                  OnSelect: =Set(varSelectedIcon, ThisItem.Emoji)
+
+      # ── SAVE BUTTON ─────────────────────────────────────────────
+      - btnSaveCategory:
+          Control: Button
+          Properties:
+            X: =SpMedium
+            Y: =Parent.Height - NavBarH - 76
+            Width: =Parent.Width - (SpMedium * 2)
+            Height: =56
+            Text: =If(IsBlank(varEditingCategory.ws_assetcategoryid), "Add Category", "Save Changes")
+            FontColor: =Color.White
+            FontSize: =FsSubtitle
+            FontWeight: =FontWeight.Semibold
+            BasePaletteColor: =ColorPrimary
+            BorderThickness: =0
+            BorderRadiusTopLeft: =28
+            BorderRadiusTopRight: =28
+            BorderRadiusBottomLeft: =28
+            BorderRadiusBottomRight: =28
+            DisplayMode: =If(Len(txtCategoryName.Value) > 0, DisplayMode.Edit, DisplayMode.Disabled)
+            OnSelect: |-
+              =IfError(
+                Patch('Asset Categories',
+                  If(IsBlank(varEditingCategory.ws_assetcategoryid), Defaults('Asset Categories'), varEditingCategory),
+                  {
+                    ws_categoryname: txtCategoryName.Value,
+                    ws_description: txtCategoryDescription.Value,
+                    ws_icon: varSelectedIcon
+                  }
+                );
+                Set(varEditingCategory, Defaults('Asset Categories'));
+                Set(varSelectedIcon, "");
+                Reset(txtCategoryName);
+                Reset(txtCategoryDescription);
+                Refresh('Asset Categories');
+                Notify("Saved", NotificationType.Success),
+                Notify("Save failed: " & FirstError.Message, NotificationType.Error)
+              )
+
+      # ── BOTTOM NAVIGATION ───────────────────────────────────────
+      - rectCatNavBg:
+          Control: Rectangle
+          Properties:
+            X: =0
+            Y: =Parent.Height - NavBarH
+            Width: =Parent.Width
+            Height: =NavBarH
+            Fill: =ColorCard
+
+      - btnCatNavHome:
+          Control: Button
+          Properties:
+            X: =0
+            Y: =Parent.Height - NavBarH
+            Width: =Parent.Width / 2
+            Height: =NavBarH
+            Text: ="🏠" & Char(10) & "Home"
+            FontColor: =ColorTextGray
+            FontSize: =FsCaption
+            BasePaletteColor: =ColorCard
+            BorderThickness: =0
+            OnSelect: =Navigate(HomeScreen, ScreenTransition.Fade)
+
+      - btnCatNavList:
+          Control: Button
+          Properties:
+            X: =Parent.Width / 2
+            Y: =Parent.Height - NavBarH
+            Width: =Parent.Width / 2
+            Height: =NavBarH
+            Text: ="📋" & Char(10) & "Assets"
+            FontColor: =ColorTextGray
+            FontSize: =FsCaption
+            BasePaletteColor: =ColorCard
+            BorderThickness: =0
+            OnSelect: =Navigate(AssetListScreen, ScreenTransition.Fade)

@@ -67,12 +67,21 @@ choiceSets:
       - { value: 100000003, label: Retired }
       - { value: 100000004, label: Lost }
 
+alternateKeys:
+
+  - table: ws_asset
+    name: ws_asset_serialnumber_key
+    displayName: Serial Number (Unique)
+    columns: [ws_serialnumber]
+    description: Enforces serial-number uniqueness for upsert and duplicate detection
+
 relationships:
 
   - type: 1:N
     name: ws_assetcategory_ws_asset
     parent: ws_assetcategory
     child: ws_asset
+    lookupColumn: ws_categoryid
     cascade: Restrict
     description: Category → Assets (deleting a category requires no assets reference it)
 
@@ -80,8 +89,62 @@ relationships:
     name: ws_asset_ws_assetassignment
     parent: ws_asset
     child: ws_assetassignment
+    lookupColumn: ws_assetid
     cascade: RemoveLink
     description: Asset → Assignment History (preserve history when asset deleted)
+
+  - type: 1:N
+    name: systemuser_ws_asset_assignedto
+    parent: systemuser
+    child: ws_asset
+    lookupColumn: ws_assignedto
+    cascade: NoCascade
+    description: System User currently holding the asset
+
+  - type: 1:N
+    name: systemuser_ws_assetassignment_assignedto
+    parent: systemuser
+    child: ws_assetassignment
+    lookupColumn: ws_assignedto
+    cascade: NoCascade
+    description: System User referenced in the assignment history row
+
+views:
+
+  - table: ws_asset
+    name: Available Assets
+    type: public
+    filter: ws_status eq 100000000
+    columns: [ws_assetname, ws_serialnumber, ws_categoryid, ws_purchasedate, ws_warrantyend]
+    sort: { column: ws_assetname, direction: asc }
+
+  - table: ws_asset
+    name: My Assigned Assets
+    type: public
+    filter: "ws_assignedto eq {currentUser} and ws_status eq 100000001"
+    columns: [ws_assetname, ws_serialnumber, ws_categoryid, ws_assigneddate]
+    sort: { column: ws_assigneddate, direction: desc }
+
+  - table: ws_asset
+    name: Out of Warranty
+    type: public
+    filter: ws_warrantyend lt {today}
+    columns: [ws_assetname, ws_serialnumber, ws_categoryid, ws_status, ws_warrantyend]
+    sort: { column: ws_warrantyend, direction: asc }
+
+  - table: ws_asset
+    name: Recently Assigned
+    type: public
+    filter: ws_assigneddate gt {today-30d}
+    columns: [ws_assetname, ws_serialnumber, ws_assignedto, ws_assigneddate, ws_status]
+    sort: { column: ws_assigneddate, direction: desc }
+
+  - table: ws_assetassignment
+    name: Active Assignments
+    type: public
+    filter: ws_assignedto_dt eq null
+    columns: [ws_assignmentname, ws_assetid, ws_assignedto, ws_assignedfrom]
+    sort: { column: ws_assignedfrom, direction: desc }
 
 securityRoles:
 

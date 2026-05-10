@@ -157,6 +157,7 @@ If a step would take more than ~10 minutes of work, break it into a TodoWrite li
 | "Build a Canvas App from a description" | Use `/build-canvas-app` skill |
 | "Build / create / design Dataverse schema" | Use `/build-dataverse-schema` skill |
 | "Configure Dataverse for me" | Use `/configure-dataverse-mcp` skill |
+| **"Deploy / set up / run asset management"** | **Use `/asset-management` skill — deploys schema + seed data + Canvas App end-to-end** |
 | "Deploy to dev" | Use `automation/Deploy-Solution.ps1 -Environment dev` |
 | "Validate the app" | Run `automation/Test-AppStandards.ps1` |
 

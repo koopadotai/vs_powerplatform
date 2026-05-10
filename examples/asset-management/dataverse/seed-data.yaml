@@ -1,0 +1,119 @@
+# Asset Management — Seed Data
+# ─────────────────────────────────────────────────────────────────────────────
+# Use with: .\automation\Import-SeedData.ps1 -Environment <url>
+# Purpose : Populates the environment with realistic test data for demos and
+#           development. All monetary values are in USD.
+
+assetCategories:
+  - ws_categoryname: Laptop
+    ws_icon: 💻
+    ws_description: Portable computers — MacBook, ThinkPad, Surface Laptop
+
+  - ws_categoryname: Mobile Phone
+    ws_icon: 📱
+    ws_description: Company-issued smartphones — iPhone, Galaxy, Pixel
+
+  - ws_categoryname: Monitor
+    ws_icon: 🖥️
+    ws_description: External displays — 24" to 34" widescreen
+
+  - ws_categoryname: Keyboard & Mouse
+    ws_icon: ⌨️
+    ws_description: Peripherals — wired and wireless input devices
+
+  - ws_categoryname: Headset
+    ws_icon: 🎧
+    ws_description: Audio devices for calls and focus work
+
+assets:
+  - ws_assetname: MacBook Pro 16 (2024)
+    ws_serialnumber: MBP-2024-001
+    ws_categoryname: Laptop        # resolved to ws_categoryid at import
+    ws_status: Assigned            # resolved to choice value at import
+    ws_purchasedate: "2024-02-15"
+    ws_purchasecost: 3499.00
+    ws_warrantyend: "2027-02-15"
+    ws_notes: M3 Pro, 18 GB RAM, 512 GB SSD
+
+  - ws_assetname: MacBook Pro 14 (2024)
+    ws_serialnumber: MBP-2024-002
+    ws_categoryname: Laptop
+    ws_status: Available
+    ws_purchasedate: "2024-02-15"
+    ws_purchasecost: 2499.00
+    ws_warrantyend: "2027-02-15"
+    ws_notes: M3, 16 GB RAM, 512 GB SSD
+
+  - ws_assetname: Dell XPS 15
+    ws_serialnumber: DEL-XPS-001
+    ws_categoryname: Laptop
+    ws_status: In Repair
+    ws_purchasedate: "2022-11-01"
+    ws_purchasecost: 1899.00
+    ws_warrantyend: "2025-11-01"
+    ws_notes: Sent to Dell service center — screen issue
+
+  - ws_assetname: ThinkPad X1 Carbon
+    ws_serialnumber: LNV-X1-001
+    ws_categoryname: Laptop
+    ws_status: Retired
+    ws_purchasedate: "2020-06-10"
+    ws_purchasecost: 1749.00
+    ws_warrantyend: "2023-06-10"
+    ws_notes: End of life — replaced by MBP fleet
+
+  - ws_assetname: iPhone 15 Pro
+    ws_serialnumber: APL-IP15-001
+    ws_categoryname: Mobile Phone
+    ws_status: Assigned
+    ws_purchasedate: "2023-10-20"
+    ws_purchasecost: 999.00
+    ws_warrantyend: "2025-10-20"
+
+  - ws_assetname: iPhone 15 Pro
+    ws_serialnumber: APL-IP15-002
+    ws_categoryname: Mobile Phone
+    ws_status: Available
+    ws_purchasedate: "2023-10-20"
+    ws_purchasecost: 999.00
+    ws_warrantyend: "2025-10-20"
+
+  - ws_assetname: Samsung Galaxy S24 Ultra
+    ws_serialnumber: SAM-S24-001
+    ws_categoryname: Mobile Phone
+    ws_status: Lost
+    ws_purchasedate: "2024-01-30"
+    ws_purchasecost: 1299.00
+    ws_warrantyend: "2026-01-30"
+    ws_notes: Reported lost — 2024-09-05
+
+  - ws_assetname: LG UltraWide 34" (Primary)
+    ws_serialnumber: LG-34UW-001
+    ws_categoryname: Monitor
+    ws_status: Assigned
+    ws_purchasedate: "2023-03-12"
+    ws_purchasecost: 599.00
+    ws_warrantyend: "2026-03-12"
+
+  - ws_assetname: LG UltraWide 34" (Secondary)
+    ws_serialnumber: LG-34UW-002
+    ws_categoryname: Monitor
+    ws_status: Available
+    ws_purchasedate: "2023-03-12"
+    ws_purchasecost: 599.00
+    ws_warrantyend: "2026-03-12"
+
+  - ws_assetname: Sony WH-1000XM5
+    ws_serialnumber: SNY-WH5-001
+    ws_categoryname: Headset
+    ws_status: Assigned
+    ws_purchasedate: "2023-07-04"
+    ws_purchasecost: 349.00
+    ws_warrantyend: "2025-07-04"
+
+statusValues:
+  Available: 100000000
+  Assigned:  100000001
+  In Repair: 100000002
+  Retired:   100000003
+  Lost:      100000004

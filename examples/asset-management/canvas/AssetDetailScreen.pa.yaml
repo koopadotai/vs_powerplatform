@@ -24,7 +24,7 @@ Screens:
             Text: ="←"
             FontColor: =Color.White
             FontSize: =22
-            Fill: =RGBA(0, 0, 0, 0)
+            BasePaletteColor: =RGBA(0, 0, 0, 0)
             BorderThickness: =0
             OnSelect: =Back()
 
@@ -53,7 +53,7 @@ Screens:
             Text: ="✎"
             FontColor: =Color.White
             FontSize: =18
-            Fill: =RGBA(0, 0, 0, 0)
+            BasePaletteColor: =RGBA(0, 0, 0, 0)
             BorderThickness: =0
             OnSelect: |-
               =Set(varEditingAsset, varSelectedAsset);
@@ -90,7 +90,7 @@ Screens:
             Y: =HeaderH + SpMedium + SpMedium + 4
             Width: =80
             Height: =28
-            Fill: =StatusColor(varSelectedAsset.ws_status.'Asset Status')
+            Fill: =StatusColor(Text(varSelectedAsset.ws_status))
 
       - lblStatus:
           Control: Label
@@ -99,7 +99,7 @@ Screens:
             Y: =HeaderH + SpMedium + SpMedium + 4
             Width: =80
             Height: =28
-            Text: =varSelectedAsset.ws_status.'Asset Status'
+            Text: =Text(varSelectedAsset.ws_status)
             Color: =Color.White
             Size: =FsCaption
             FontWeight: =FontWeight.Semibold
@@ -156,7 +156,7 @@ Screens:
             Y: =HeaderH + SpMedium + 130
             Width: =(Parent.Width - (SpMedium * 4)) / 2
             Height: =20
-            Text: =varSelectedAsset.ws_categoryid.ws_categoryname
+            Text: =varSelectedAsset.ws_Category.ws_categoryname
             Color: =ColorTextDark
             Size: =FsBody
             Fill: =RGBA(0, 0, 0, 0)
@@ -207,7 +207,7 @@ Screens:
             Y: =HeaderH + 260
             Width: =Parent.Width - (SpMedium * 4)
             Height: =22
-            Text: =If(IsBlank(varSelectedAsset.ws_assignedto), "— Unassigned —", varSelectedAsset.ws_assignedto.'Full Name')
+            Text: =If(IsBlank(varSelectedAsset.ws_AssignedTo), "— Unassigned —", varSelectedAsset.ws_AssignedTo.'Full Name')
             Color: =ColorTextDark
             Size: =FsBody
             Fill: =RGBA(0, 0, 0, 0)
@@ -238,7 +238,7 @@ Screens:
             FontColor: =ColorError
             FontSize: =FsBody
             FontWeight: =FontWeight.Semibold
-            Fill: =ColorCard
+            BasePaletteColor: =ColorCard
             BorderColor: =ColorError
             BorderThickness: =1
             BorderRadiusTopLeft: =24
@@ -249,7 +249,7 @@ Screens:
               =IfError(
                 Remove('Assets', varSelectedAsset);
                 Notify("Asset deleted", NotificationType.Success);
-                Navigate(AssetListScreen, ScreenTransition.CoverLeft),
+                Navigate(AssetListScreen, ScreenTransition.UnCover),
                 Notify("Delete failed: " & FirstError.Message, NotificationType.Error)
               )
 
@@ -273,7 +273,7 @@ Screens:
             Text: ="🏠" & Char(10) & "Home"
             FontColor: =ColorTextGray
             FontSize: =FsCaption
-            Fill: =ColorCard
+            BasePaletteColor: =ColorCard
             BorderThickness: =0
             OnSelect: =Navigate(HomeScreen, ScreenTransition.Fade)
 
@@ -288,6 +288,6 @@ Screens:
             FontColor: =ColorPrimary
             FontSize: =FsCaption
             FontWeight: =FontWeight.Semibold
-            Fill: =ColorCard
+            BasePaletteColor: =ColorCard
             BorderThickness: =0
             OnSelect: =Navigate(AssetListScreen, ScreenTransition.Fade)
