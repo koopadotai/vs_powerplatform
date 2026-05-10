@@ -78,30 +78,225 @@ If `dataverse` shows ✓ Connected and `Create Table` is listed in its tools →
 
 ### Path 3-MCP — Staged build via Dataverse MCP (preferred when available)
 
-The example ships with `examples/asset-management/dataverse/schema.yaml` as the source spec. Drive the MCP from this spec using the **6-stage pattern** in `skills/build-dataverse-schema.md` Path A. **Critical rules:**
+This is a **strict 6-stage wizard pattern** with mandatory user approval gates between every stage. **Do NOT skip approval gates.** Each stage: AI pushes via MCP → AI tells user to validate in maker portal → AI waits for explicit user approval → only then proceed.
+
+**Critical rules — applied at every stage:**
 
 - ✅ One artifact type per prompt (table, OR columns, OR choice, OR relationship)
 - ✅ One table per prompt in stage 2
-- ✅ 5–10 columns max per prompt in stage 4
-- ✅ **ALWAYS prefix every prompt with: `Inside solution: AssetManagement` + `Use publisher prefix: <prefix>`**
-- ✅ After every step: verify with `list_tables` / `describe_table`, wait ~5–10 sec for metadata propagation, then continue
-- ❌ NEVER create tables + columns + lookups + choices in a single prompt — preview MCP is unstable for long chains
-- ❌ NEVER omit "Inside solution: AssetManagement" — without it, MCP may create the table in **Default Solution** (especially preview mode)
+- ✅ 5–10 columns max per prompt in stage 3
+- ✅ **ALWAYS prefix every MCP call's intent with: `Inside solution: AssetManagement` + `Use publisher prefix: <prefix>`**
+- ✅ After every MCP push: AI calls `list_tables` / `describe_table` to verify, then **WAITS for explicit user approval before proceeding to next stage**
+- ❌ NEVER bundle multiple stages in one prompt
+- ❌ NEVER omit "Inside solution: AssetManagement" — MCP may create in **Default Solution** otherwise
 
-**Recommended order for asset-management:**
-1. Solution shell only (no tables)
-2. Tables (one prompt each): Asset Category → Asset → Asset Assignment
-3. Verify all 3 tables exist
-4. Simple columns per table (one prompt per table — text/date/memo/currency)
-5. Choice set `ws_assetstatus` (separate prompt)
-6. Relationships LAST (one prompt per lookup):
-   - ws_assetcategory → ws_asset (required, Restrict)
-   - ws_asset → ws_assetassignment (required, RemoveLink)
-   - SystemUser → ws_asset (optional, NoCascade)
-   - SystemUser → ws_assetassignment (required, NoCascade)
-7. Alternate key on `ws_asset.ws_serialnumber`
+#### Stage gate format (use exactly this pattern between every stage)
 
-After all stages: `pac solution export --name AssetManagement --path AssetManagement.zip --managed false` to capture the portable artifact.
+After every MCP push completes, the AI must produce this gate:
+
+```
+✓ Stage <N>: <name> — pushed via Dataverse MCP
+
+What I created:
+  - <artifact 1>
+  - <artifact 2>
+  - <artifact 3>
+
+What I verified (via MCP):
+  - list_tables returned: <names>
+  - describe_table on <X> returned: <columns>
+
+⏸  Please validate in maker portal:
+  1. Open https://make.powerapps.com → Solutions → AssetManagement
+  2. Confirm <specific items> appear under Objects → Tables (or Choices, etc.)
+  3. Spot-check that table belongs to AssetManagement solution (NOT Default)
+
+Reply "approved" when ready, or describe what's wrong if anything is off.
+```
+
+The AI must STOP after producing the gate. Do not proceed until the user types "approved" (or equivalent confirmation).
+
+#### The 6 stages
+
+##### Stage 1 — Solution shell
+
+MCP push:
+```
+Inside solution: AssetManagement
+Use publisher prefix: ws
+
+Create solution + publisher only:
+  uniqueName:        AssetManagement
+  displayName:       Asset Management
+  publisherUnique:   WeeSiongDev
+  publisherDisplay:  Wee Siong Dev
+  prefix:            ws
+  optionValuePrefix: 10000
+  description:       IT asset tracking — devices, categories, and assignments
+```
+
+Verify: `list_solutions` shows AssetManagement.
+
+User validates: Solutions list in maker portal shows "Asset Management" with publisher "Wee Siong Dev".
+
+**Gate → wait for "approved".**
+
+##### Stage 2 — Base tables (3 separate prompts)
+
+For each table, send ONE MCP prompt. Tables in this order: ws_assetcategory → ws_asset → ws_assetassignment.
+
+Per-table prompt template:
+```
+Inside solution: AssetManagement
+Use publisher prefix: ws
+
+Create table:
+  schemaName:        ws_<entity>
+  displayName:       <Display>
+  pluralDisplayName: <Plural>
+  primaryColumn:     ws_<primaryName>
+  description:       <one-line>
+  ownership:         Organization
+  auditingEnabled:   true
+
+After creation, verify:
+  1. Table exists in env
+  2. Table belongs to AssetManagement solution (NOT Default)
+  3. Primary column has correct schema name
+```
+
+After all 3 tables created, verify with `list_tables` filtered to ws_ prefix.
+
+User validates: 3 tables visible under AssetManagement → Tables.
+
+**Gate → wait for "approved".**
+
+##### Stage 3 — Simple columns (3 separate prompts, one per table)
+
+For each table, ONE MCP prompt that adds its simple (text/date/number/memo/currency) columns. NO lookups, NO choices in this stage.
+
+Per-table prompt template:
+```
+Inside solution: AssetManagement
+
+Add simple columns to ws_<entity>:
+  - {schema, display, type=Text, maxLength}
+  - {schema, display, type=DateTime, behavior=DateOnly}
+  - {schema, display, type=Currency}
+  - {schema, display, type=Memo, maxLength}
+
+After each column:
+  1. Verify success
+  2. Wait for metadata propagation
+  3. Continue only if successful
+```
+
+Per `schema.yaml`:
+- `ws_assetcategory`: ws_icon (Text, 4), ws_description (Memo, 500)
+- `ws_asset`: ws_serialnumber (Text, 50, required), ws_purchasedate (DateOnly), ws_purchasecost (Currency), ws_warrantyend (DateOnly), ws_assigneddate (DateTime), ws_notes (Memo, 2000)
+- `ws_assetassignment`: ws_assignedfrom (DateTime, required), ws_assignedto_dt (DateTime), ws_notes (Memo, 1000)
+
+Verify: `describe_table` per entity confirms all simple columns.
+
+User validates: Each table's column list in maker portal matches.
+
+**Gate → wait for "approved".**
+
+##### Stage 4 — Choice sets (1 prompt)
+
+```
+Inside solution: AssetManagement
+
+Create choice set ws_assetstatus:
+  isGlobal: false
+  options:
+    - {value: 100000000, label: Available}
+    - {value: 100000001, label: Assigned}
+    - {value: 100000002, label: In Repair}
+    - {value: 100000003, label: Retired}
+    - {value: 100000004, label: Lost}
+
+Then add ws_status column to ws_asset:
+  type:      Choice
+  optionSet: ws_assetstatus
+  required:  true
+```
+
+Verify: `describe_table ws_asset` shows ws_status with optionset = ws_assetstatus.
+
+User validates: ws_asset has Status column with 5 options.
+
+**Gate → wait for "approved".**
+
+##### Stage 5 — Alternate keys (1 prompt)
+
+```
+Inside solution: AssetManagement
+
+Create alternate key on ws_asset:
+  name:        ws_asset_serialnumber_key
+  displayName: Serial Number (Unique)
+  columns:     [ws_serialnumber]
+  description: Enforces serial-number uniqueness for upsert and duplicate detection
+```
+
+Verify: `describe_table ws_asset` returns the new entity key.
+
+User validates: ws_asset → Keys shows the new alternate key as Active (may take 30 sec to transition from Pending).
+
+**Gate → wait for "approved".**
+
+##### Stage 6 — Relationships LAST (4 separate prompts)
+
+For each relationship, ONE MCP prompt. Order:
+
+1. ws_assetcategory → ws_asset (required, Restrict)
+2. ws_asset → ws_assetassignment (required, RemoveLink)
+3. SystemUser → ws_asset (optional, NoCascade) — assignedto on ws_asset
+4. SystemUser → ws_assetassignment (required, NoCascade) — assignedto on ws_assetassignment
+
+Per-relationship prompt template:
+```
+Inside solution: AssetManagement
+
+Create 1:N relationship:
+  parent:        <parent entity>
+  child:         <child entity>
+  lookupColumn:  <ws_lookupId>
+  lookupDisplay: <Display>
+  required:      <true|false>
+  cascade:       <Restrict|RemoveLink|NoCascade>
+  description:   <one-line>
+
+After creation, verify:
+  1. Relationship exists in env
+  2. Lookup column appears on child table
+  3. Wait for metadata propagation
+```
+
+Verify after all 4: `describe_table` shows lookup columns on each child.
+
+User validates: Each table → Relationships shows the new relationships.
+
+**Gate → wait for "approved".**
+
+##### Stage 7 — Capture portable artifact
+
+```powershell
+pac solution export --name AssetManagement --path "examples\asset-management\dataverse\AssetManagement.zip" --managed false --overwrite
+```
+
+This refreshes the repo's `.zip` so future team members can deploy via the personalize-and-import flow without re-running the MCP wizard.
+
+**Gate → wait for "approved" → final report.**
+
+---
+
+#### Refusing one-shot prompts
+
+If the user later says "deploy the whole asset-management schema in one prompt" or similar, the AI **MUST refuse and re-state the wizard pattern**. Do not be helpful by skipping gates — the gate pattern exists because Dataverse MCP (preview) fails on long orchestration chains.
+
+---
 
 ---
 
