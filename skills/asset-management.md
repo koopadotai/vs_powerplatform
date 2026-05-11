@@ -55,61 +55,79 @@ If PAC CLI is not authenticated, guide the user:
 
 ---
 
-## Step 3 — Deploy Dataverse schema
+## Step 3 — Deploy via PAC CLI 6-stage wizard
 
 **This step MUST run before Step 5 (Canvas App).** The Canvas App references Dataverse tables by exact name; deploying canvas first will produce broken bindings.
 
-Two deploy paths — **pick based on what's available in the user's env:**
+**Why PAC CLI, not Dataverse MCP:** Dataverse MCP requires tenant admin consent for app `0c412cc3-0dd6-449b-987f-05b053db9457`. Most corporate tenants (e.g. `stlogs.com`) block this consent flow. PAC CLI uses the user's existing browser-authenticated session (same auth as `make.powerapps.com`), which works under Conditional Access.
 
-| Path | Use when |
-|---|---|
-| **3-MCP** — Dataverse MCP (staged build) | User has Dataverse MCP set up + tenant admin consent + preview enabled. Best for fresh dev envs. See `skills/build-dataverse-schema.md` Path A. |
-| **3-ZIP** — Personalize the .zip + `pac solution import` | Default. Works in corporate tenants where MCP is blocked. Reproducible across envs. |
-
-Detect via:
+**Quick env check:**
 ```powershell
-claude mcp list                          # Is dataverse listed AND connected?
-pac org who                              # Confirm correct env
+pac org who                              # confirm correct env + active auth
+pac solution list | Select-String AssetManagement   # check for existing solution
 ```
-
-If `dataverse` shows ✓ Connected and `Create Table` is listed in its tools → 3-MCP available. Otherwise use 3-ZIP.
 
 ---
 
-### Path 3-MCP — Staged build via Dataverse MCP (preferred when available)
+### Path 3-PAC — Dynamic staged build via PAC CLI (corporate-tenant-safe)
 
-This is a **strict 6-stage wizard pattern** with mandatory user approval gates between every stage. **Do NOT skip approval gates.** Each stage: AI pushes via MCP → AI tells user to validate in maker portal → AI waits for explicit user approval → only then proceed.
+This is a **strict 6-stage wizard pattern** with mandatory user approval gates between every stage. The AI agent **builds each stage's solution `.zip` dynamically at runtime** based on:
+- `examples/asset-management/dataverse/schema.yaml` (publisher-agnostic source of truth)
+- User-provided publisher name, display name, and prefix (collected at Stage 0)
+- The stage's component subset (defined per stage below)
+
+**No pre-built stage zips ship in this repo.** Each user's deployment generates fresh, personalized stage zips into `dist/asset-management-<prefix>/staged/`, which are then imported via `pac solution import`. This avoids inheriting any foreign publisher (`WeeSiongDev` / `ws_`) and gives every env a clean, native naming convention.
+
+**Why PAC CLI not Dataverse MCP:** Dataverse MCP requires tenant admin consent that corporate tenants block. PAC CLI uses standard browser-based auth that's already allowed.
+
+#### Stage 0 — Collect personalization inputs (one-time, before Stage 1)
+
+Before any stage runs, the AI asks (if not already known):
+
+```
+To deploy asset-management to your env, I need:
+  1. Publisher unique name (alphanumeric, no spaces, e.g. "ContosoCorp")
+  2. Publisher display name (e.g. "Contoso Corporation")
+  3. Prefix (2-8 lowercase letters, e.g. "ctso") — applied to every table/column
+  4. Option-value prefix (5 digits, default 10000)
+  5. Solution unique name (default "AssetManagement")
+```
+
+Validate each before proceeding. Refuse `ws` and `WeeSiongDev` as values (those are the placeholders in the source `.zip`).
+
+Store these as session variables for subsequent stages.
 
 **Critical rules — applied at every stage:**
 
-- ✅ One artifact type per prompt (table, OR columns, OR choice, OR relationship)
-- ✅ One table per prompt in stage 2
-- ✅ 5–10 columns max per prompt in stage 3
-- ✅ **ALWAYS prefix every MCP call's intent with: `Inside solution: AssetManagement` + `Use publisher prefix: <prefix>`**
-- ✅ After every MCP push: AI calls `list_tables` / `describe_table` to verify, then **WAITS for explicit user approval before proceeding to next stage**
-- ❌ NEVER bundle multiple stages in one prompt
-- ❌ NEVER omit "Inside solution: AssetManagement" — MCP may create in **Default Solution** otherwise
+- ✅ Each stage = AI **dynamically builds** a stage-specific `.zip` then runs ONE `pac solution import` of it
+- ✅ All names are derived from user's Stage-0 inputs — NEVER use hardcoded `ws_*` or `WeeSiongDev` from the source `.zip`
+- ✅ Solution unique name stays the same across stages (user's chosen name); version bumps each stage (1.0.0 → 1.0.1 → 1.0.2 ...)
+- ✅ After every import: AI runs PAC verify commands (`pac solution list`, `pac org list-tables --filter <prefix>_`), then **WAITS for explicit user approval before proceeding to next stage**
+- ❌ NEVER skip a gate — even if the import succeeds, user must validate in maker portal first
+- ❌ NEVER bundle multiple stages into one zip — defeats the wizard pattern's purpose
+- ❌ NEVER reuse hardcoded `ws_` schema names — the dynamic build uses the user's prefix everywhere
+- ❌ NEVER skip Stage 0 — without publisher inputs, the AI doesn't know what names to use
 
 #### Stage gate format (use exactly this pattern between every stage)
 
-After every MCP push completes, the AI must produce this gate:
+After every PAC import completes, the AI must produce this gate:
 
 ```
-✓ Stage <N>: <name> — pushed via Dataverse MCP
+✓ Stage <N>: <name> — imported via pac solution import
 
-What I created:
+PAC commands run:
+  - pac solution import --path stage<N>-<name>.zip --publish-changes
+  - pac solution list (now shows version <X.Y.Z>)
+  - pac org list-tables --filter ws_ (verified <count> tables)
+
+What's now in your env:
   - <artifact 1>
   - <artifact 2>
-  - <artifact 3>
-
-What I verified (via MCP):
-  - list_tables returned: <names>
-  - describe_table on <X> returned: <columns>
 
 ⏸  Please validate in maker portal:
-  1. Open https://make.powerapps.com → Solutions → AssetManagement
-  2. Confirm <specific items> appear under Objects → Tables (or Choices, etc.)
-  3. Spot-check that table belongs to AssetManagement solution (NOT Default)
+  1. Open https://make.powerapps.com → Solutions → Asset Management
+  2. Click into Objects → <relevant section>
+  3. Confirm <specific items>
 
 Reply "approved" when ready, or describe what's wrong if anything is off.
 ```
@@ -118,189 +136,185 @@ The AI must STOP after producing the gate. Do not proceed until the user types "
 
 #### The 6 stages
 
-##### Stage 1 — Solution shell
+##### Stage 1 — Solution shell (dynamic build + import)
 
-MCP push:
-```
-Inside solution: AssetManagement
-Use publisher prefix: ws
+**AI dynamically generates `stage1-shell.zip` from Stage-0 inputs:**
 
-Create solution + publisher only:
-  uniqueName:        AssetManagement
-  displayName:       Asset Management
-  publisherUnique:   WeeSiongDev
-  publisherDisplay:  Wee Siong Dev
-  prefix:            ws
-  optionValuePrefix: 10000
-  description:       IT asset tracking — devices, categories, and assignments
-```
-
-Verify: `list_solutions` shows AssetManagement.
-
-User validates: Solutions list in maker portal shows "Asset Management" with publisher "Wee Siong Dev".
-
-**Gate → wait for "approved".**
-
-##### Stage 2 — Base tables (3 separate prompts)
-
-For each table, send ONE MCP prompt. Tables in this order: ws_assetcategory → ws_asset → ws_assetassignment.
-
-Per-table prompt template:
-```
-Inside solution: AssetManagement
-Use publisher prefix: ws
-
-Create table:
-  schemaName:        ws_<entity>
-  displayName:       <Display>
-  pluralDisplayName: <Plural>
-  primaryColumn:     ws_<primaryName>
-  description:       <one-line>
-  ownership:         Organization
-  auditingEnabled:   true
-
-After creation, verify:
-  1. Table exists in env
-  2. Table belongs to AssetManagement solution (NOT Default)
-  3. Primary column has correct schema name
-```
-
-After all 3 tables created, verify with `list_tables` filtered to ws_ prefix.
-
-User validates: 3 tables visible under AssetManagement → Tables.
-
-**Gate → wait for "approved".**
-
-##### Stage 3 — Simple columns (3 separate prompts, one per table)
-
-For each table, ONE MCP prompt that adds its simple (text/date/number/memo/currency) columns. NO lookups, NO choices in this stage.
-
-Per-table prompt template:
-```
-Inside solution: AssetManagement
-
-Add simple columns to ws_<entity>:
-  - {schema, display, type=Text, maxLength}
-  - {schema, display, type=DateTime, behavior=DateOnly}
-  - {schema, display, type=Currency}
-  - {schema, display, type=Memo, maxLength}
-
-After each column:
-  1. Verify success
-  2. Wait for metadata propagation
-  3. Continue only if successful
-```
-
-Per `schema.yaml`:
-- `ws_assetcategory`: ws_icon (Text, 4), ws_description (Memo, 500)
-- `ws_asset`: ws_serialnumber (Text, 50, required), ws_purchasedate (DateOnly), ws_purchasecost (Currency), ws_warrantyend (DateOnly), ws_assigneddate (DateTime), ws_notes (Memo, 2000)
-- `ws_assetassignment`: ws_assignedfrom (DateTime, required), ws_assignedto_dt (DateTime), ws_notes (Memo, 1000)
-
-Verify: `describe_table` per entity confirms all simple columns.
-
-User validates: Each table's column list in maker portal matches.
-
-**Gate → wait for "approved".**
-
-##### Stage 4 — Choice sets (1 prompt)
-
-```
-Inside solution: AssetManagement
-
-Create choice set ws_assetstatus:
-  isGlobal: false
-  options:
-    - {value: 100000000, label: Available}
-    - {value: 100000001, label: Assigned}
-    - {value: 100000002, label: In Repair}
-    - {value: 100000003, label: Retired}
-    - {value: 100000004, label: Lost}
-
-Then add ws_status column to ws_asset:
-  type:      Choice
-  optionSet: ws_assetstatus
-  required:  true
-```
-
-Verify: `describe_table ws_asset` shows ws_status with optionset = ws_assetstatus.
-
-User validates: ws_asset has Status column with 5 options.
-
-**Gate → wait for "approved".**
-
-##### Stage 5 — Alternate keys (1 prompt)
-
-```
-Inside solution: AssetManagement
-
-Create alternate key on ws_asset:
-  name:        ws_asset_serialnumber_key
-  displayName: Serial Number (Unique)
-  columns:     [ws_serialnumber]
-  description: Enforces serial-number uniqueness for upsert and duplicate detection
-```
-
-Verify: `describe_table ws_asset` returns the new entity key.
-
-User validates: ws_asset → Keys shows the new alternate key as Active (may take 30 sec to transition from Pending).
-
-**Gate → wait for "approved".**
-
-##### Stage 6 — Relationships LAST (4 separate prompts)
-
-For each relationship, ONE MCP prompt. Order:
-
-1. ws_assetcategory → ws_asset (required, Restrict)
-2. ws_asset → ws_assetassignment (required, RemoveLink)
-3. SystemUser → ws_asset (optional, NoCascade) — assignedto on ws_asset
-4. SystemUser → ws_assetassignment (required, NoCascade) — assignedto on ws_assetassignment
-
-Per-relationship prompt template:
-```
-Inside solution: AssetManagement
-
-Create 1:N relationship:
-  parent:        <parent entity>
-  child:         <child entity>
-  lookupColumn:  <ws_lookupId>
-  lookupDisplay: <Display>
-  required:      <true|false>
-  cascade:       <Restrict|RemoveLink|NoCascade>
-  description:   <one-line>
-
-After creation, verify:
-  1. Relationship exists in env
-  2. Lookup column appears on child table
-  3. Wait for metadata propagation
-```
-
-Verify after all 4: `describe_table` shows lookup columns on each child.
-
-User validates: Each table → Relationships shows the new relationships.
-
-**Gate → wait for "approved".**
-
-##### Stage 7 — Capture portable artifact
+1. Start from the project's source `.zip` as a template: `examples/asset-management/dataverse/AssetManagement.zip`
+2. Unpack to a working folder under `dist/asset-management-<prefix>/build/stage1/`
+3. **Strip all Entity/Relationship content** from `customizations.xml` — leave only the `<ImportExportXml>` skeleton with empty `<Entities />` and `<EntityRelationships />`
+4. **Strip all `<RootComponent>` entries** from `solution.xml` (just the empty shell)
+5. **Rewrite `solution.xml`** with user's Stage-0 values:
+   - `<UniqueName>` → user's solution unique name
+   - `<Publisher><UniqueName>` → user's publisher unique name
+   - `<Publisher><LocalizedName>` → user's publisher display name
+   - `<CustomizationPrefix>` → user's prefix
+   - `<CustomizationOptionValuePrefix>` → user's option-value prefix
+   - `<Version>` → `1.0.0.0`
+6. Repack as `dist/asset-management-<prefix>/staged/stage1-shell.zip`
+7. Import:
 
 ```powershell
-pac solution export --name AssetManagement --path "examples\asset-management\dataverse\AssetManagement.zip" --managed false --overwrite
+pac solution import `
+  --path "dist\asset-management-<prefix>\staged\stage1-shell.zip" `
+  --publish-changes
 ```
 
-This refreshes the repo's `.zip` so future team members can deploy via the personalize-and-import flow without re-running the MCP wizard.
+**Verify:**
+```powershell
+pac solution list | Select-String <SolutionUniqueName>
+```
+
+**User validates in maker portal:** Solutions → "<Display Name>" appears with publisher "<Publisher Display>". Solution is empty.
+
+**Gate → wait for "approved".**
+
+##### Stage 2 — Base tables (dynamic build + import)
+
+**AI dynamically generates `stage2-tables.zip` from `schema.yaml` + Stage-0 inputs:**
+
+1. Start from the source `AssetManagement.zip` as a template (it already has the 3 entities defined correctly)
+2. Unpack to `dist/asset-management-<prefix>/build/stage2/`
+3. **In `customizations.xml`:** Apply prefix substitution `ws_` → `<prefix>_` everywhere (entity schemas, attribute names, choice optionset names, alternate key names)
+4. **Strip the `<EntityRelationships>` content** — relationships go in Stage 3
+5. **Strip relationship-related `<RootComponent>` entries** from `solution.xml` (keep only entity root components)
+6. **In `solution.xml`:**
+   - Apply prefix + publisher rewrites (same as Stage 1)
+   - Bump `<Version>` to `1.0.1.0`
+7. Repack as `dist/asset-management-<prefix>/staged/stage2-tables.zip`
+8. Import:
+
+```powershell
+pac solution import `
+  --path "dist\asset-management-<prefix>\staged\stage2-tables.zip" `
+  --publish-changes
+```
+
+**What this adds (upgrade to v1.0.1):**
+- 3 tables (with `<prefix>_` names): asset category, asset, asset assignment
+- All simple columns (text / date / number / memo / currency) per `schema.yaml`
+- Choice set `<prefix>_assetstatus` + `<prefix>_status` Choice column
+- Alternate key `<prefix>_asset_serialnumber_key`
+- **NO lookups, NO relationships** — come in Stage 3
+
+**Verify:**
+```powershell
+pac org list-tables --filter <prefix>_              # expect 3 tables
+pac solution list | Select-String <SolutionName>    # expect version 1.0.1
+```
+
+**User validates in maker portal:** AssetManagement → Tables shows all 3 tables. Click `<prefix>_asset` → Columns and confirm Status (Choice), Serial Number, Purchase Date, etc. Click `<prefix>_asset` → Keys to confirm alternate key.
+
+**Gate → wait for "approved".**
+
+##### Stage 3 — Relationships (dynamic build + import)
+
+**AI dynamically generates `stage3-relationships.zip`:**
+
+1. Start from the full source `AssetManagement.zip` (which has everything)
+2. Unpack to `dist/asset-management-<prefix>/build/stage3/`
+3. **In `customizations.xml`:** Apply prefix substitution `ws_` → `<prefix>_` (same as Stage 2)
+4. **Keep the `<EntityRelationships>` content** (4 relationships)
+5. **In `solution.xml`:** Apply prefix + publisher rewrites, bump `<Version>` to `1.0.2.0`
+6. Repack as `dist/asset-management-<prefix>/staged/stage3-relationships.zip`
+7. Import:
+
+```powershell
+pac solution import `
+  --path "dist\asset-management-<prefix>\staged\stage3-relationships.zip" `
+  --publish-changes
+```
+
+**What this adds (upgrade to v1.0.2):**
+1. `<prefix>_assetcategory` → `<prefix>_asset` (required, Restrict — `<prefix>_categoryid` lookup)
+2. `<prefix>_asset` → `<prefix>_assetassignment` (required, RemoveLink — `<prefix>_assetid` lookup)
+3. `SystemUser` → `<prefix>_asset` (optional, NoCascade — `<prefix>_assignedto` lookup)
+4. `SystemUser` → `<prefix>_assetassignment` (required, NoCascade — `<prefix>_assignedto` lookup)
+
+**Verify:**
+```powershell
+pac solution list | Select-String <SolutionName>   # expect version 1.0.2
+```
+
+**User validates in maker portal:** each table → Relationships shows the 4 new lookups. The `Category` column on Asset is now a Lookup (not Text).
+
+**Gate → wait for "approved".**
+
+##### Stage 4 — Views/forms (manual via maker portal, then export to capture)
+
+PAC CLI has no "create view" command. This stage is **manual but supervised**:
+
+The AI tells the user to add the 5 public views from `schema.yaml` lines 112-148 in maker portal:
+1. **Available Assets** (on ws_asset) — filter `ws_status eq 100000000`
+2. **My Assigned Assets** (on ws_asset) — filter `ws_assignedto eq {currentUser} and ws_status eq 100000001`
+3. **Out of Warranty** (on ws_asset) — filter `ws_warrantyend lt {today}`
+4. **Recently Assigned** (on ws_asset) — filter `ws_assigneddate gt {today-30d}`
+5. **Active Assignments** (on ws_assetassignment) — filter `ws_assignedto_dt eq null`
+
+Steps in maker portal: AssetManagement → Tables → ws_asset → Views → + New view (repeat 4 times for ws_asset, then once on ws_assetassignment).
+
+After the user adds them, the AI captures into a personalized snapshot:
+```powershell
+pac solution export `
+  --name <SolutionName> `
+  --path "dist\asset-management-<prefix>\<SolutionName>-final.zip" `
+  --managed false --overwrite
+```
+
+> **Important:** the export goes into `dist/`, NOT back into `examples/`. The source `examples/asset-management/dataverse/AssetManagement.zip` stays publisher-agnostic for future users.
+
+User validates: 5 views visible across the two tables.
+
+**Gate → wait for "approved".**
+
+##### Stage 5 — Canvas App (inside the same solution)
+
+The Canvas App **must live inside the AssetManagement solution** so it ships as one deployable unit.
+
+The AI tells the user:
+> "In maker portal: Solutions → Asset Management → + New → App → Canvas app → Phone form factor → name 'Asset Management'. After Studio opens: Settings → Updates → toggle Coauthoring ON. Copy the Studio URL (must contain `appid=...`) and paste it here."
+
+After URL provided, the AI:
+1. Configures canvas-authoring MCP for that Studio URL (via `canvas-apps:configure-canvas-mcp` skill)
+2. Calls `mcp__canvas-authoring__compile_canvas` with `sources: examples/asset-management/canvas/`
+3. Verifies all 5 screens compiled
+
+User validates: app loads in Studio with all screens. Add data sources (Data → + Add data → ws_asset, ws_assetcategory).
+
+**Gate → wait for "approved".**
+
+##### Stage 6 — Flows (placeholder)
+
+> Power Automate flows are not yet defined for asset-management. Future examples might include:
+>   - On asset assignment: send email to user with assignment details
+>   - Daily: report assets with warranty expiring in 30 days
+>
+> When flows are added, the AI will dynamically generate `dist/asset-management-<prefix>/staged/stage6-flows.zip` from flow templates + user's connection refs, then `pac solution import`. For now, the AI marks this stage as "not yet implemented".
 
 **Gate → wait for "approved" → final report.**
+
+##### Final — Capture the user's complete personalized solution
+
+```powershell
+pac solution export `
+  --name <SolutionName> `
+  --path "dist\asset-management-<prefix>\<SolutionName>-complete.zip" `
+  --managed false --overwrite
+```
+
+This snapshots the user's fully-deployed solution under `dist/` as their personalized portable artifact (for redeployment to their test/staging/prod). **Never overwrite `examples/asset-management/dataverse/AssetManagement.zip`** — that file is the publisher-agnostic template that the AI uses to bootstrap each new user's dynamic build.
 
 ---
 
 #### Refusing one-shot prompts
 
-If the user later says "deploy the whole asset-management schema in one prompt" or similar, the AI **MUST refuse and re-state the wizard pattern**. Do not be helpful by skipping gates — the gate pattern exists because Dataverse MCP (preview) fails on long orchestration chains.
+If the user later says "deploy the whole asset-management schema in one prompt" or "skip the gates", the AI **MUST refuse and re-state the wizard pattern**. Do not be helpful by skipping gates — the gate pattern exists for staged validation; skipping it produces unrecoverable failures partway through a deploy.
 
 ---
 
 ---
 
-### Path 3-ZIP — Personalize and import the .zip
+### Path 3-FAST — Personalize the full .zip + import (one-shot, no wizard)
 
 The example ships with a placeholder publisher (`WeeSiongDev`, prefix `ws`). Before importing into a team member's env, the AI agent **personalizes** the solution to use their publisher + prefix — so they don't inherit a foreign publisher and the tables match their org's naming standards. This is automatic — the team member never edits XML.
 

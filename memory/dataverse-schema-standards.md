@@ -6,14 +6,49 @@
 
 | Path | Use when... | Trade-offs |
 |---|---|---|
-| **A. Dataverse MCP (staged build)** | Building schema interactively in a dev env. User has tenant admin consent + preview MCP enabled. | AI agent does the work conversationally. Requires staged execution (see below) — preview MCP is unstable for one-shot full-schema builds. |
-| **B. Solution `.zip` + `pac solution import`** | Distributing to other envs (test/staging/prod, teammate envs). Corporate tenants where MCP is blocked. | Reproducible, ALM-friendly, works under Conditional Access. The `.zip` is the deployable artifact. |
+| **A. PAC CLI staged build (RECOMMENDED for corporate tenants)** | Default for any env. Always works under Conditional Access. Each stage = `pac solution import` of a pre-built stage zip with user approval gates between. | Requires the staged zips (`stage1-shell.zip` / `stage2-tables.zip` / `stage3-relationships.zip`) to be pre-built and shipped with the project. |
+| **B. Dataverse MCP (staged build)** | User has tenant admin consent + preview MCP enabled. Personal dev tenants. | AI agent does the work conversationally. **Blocked by most corporate tenants** (incl. stlogs.com) because the MCP CLI app needs admin consent. |
+| **C. One-shot `.zip` import (FAST, no wizard)** | Quick deploy when user trusts the example as-is. AI personalizes the complete `.zip` for their publisher/prefix, then one `pac solution import`. | No staged validation gates; user discovers issues only after full deploy. |
 
 For both, the schema spec lives in `examples/<app>/dataverse/schema.yaml` as the source of truth.
 
 ---
 
-## Path A — Dataverse MCP, Staged Build (when MCP is available)
+## Path A — PAC CLI Dynamic Staged Build (default — works in corporate tenants)
+
+**The AI agent builds each stage's solution `.zip` dynamically at runtime.** No pre-built stage zips ship in the repo. The source `examples/<app>/dataverse/AssetManagement.zip` is a publisher-agnostic template; each user's deployment generates fresh stage zips under `dist/<app>-<prefix>/staged/` using their own publisher name + prefix.
+
+Why dynamic:
+- Avoids inheriting a foreign publisher (the source's `WeeSiongDev` / `ws_` placeholder)
+- Each user gets clean naming native to their org standards
+- The repo stays portable across teammates with different naming conventions
+- Hardcoded artifacts would break in any env that uses a different prefix
+
+The 6-stage wizard (Stage 0 collects user inputs first):
+
+0. **Collect inputs** — env URL, publisher unique name, publisher display name, prefix, option-value prefix, solution unique name. Stage 0 happens once before any imports.
+1. **Solution shell** — AI generates `dist/<app>-<prefix>/staged/stage1-shell.zip` (empty solution with user's publisher) → `pac solution import` → user approves
+2. **Base tables** (with simple columns + choice + alternate key) — AI generates `stage2-tables.zip` with `<prefix>_*` schema names, no relationships → import → user approves
+3. **Relationships** — AI generates `stage3-relationships.zip` (full solution incl. lookups) → import → user approves
+4. **Views/forms** — manual in maker portal, then `pac solution export` to capture into `dist/` → user approves
+5. **Canvas App** (inside the solution) — user creates empty app in maker portal, AI compiles via canvas-authoring MCP → user approves
+6. **Flows** — placeholder (future work) → final report
+7. **Final** — `pac solution export` to `dist/<app>-<prefix>/<SolutionName>-complete.zip` (the user's personalized portable artifact)
+
+**The dynamic build per stage** (steps 1–3): AI unpacks the source `AssetManagement.zip` template, applies prefix substitution (`ws_` → user's prefix) + publisher rewrites in `customizations.xml` + `solution.xml`, strips the components that don't belong in this stage, bumps the version, repacks. Each stage is a fresh build from the same source template — never modifies the template itself.
+
+**Critical rules:**
+- ✅ User approval gate between every stage (verify in maker portal first)
+- ✅ Each stage uses ONE `pac solution import` call — no bundling
+- ✅ Solution version bumps each stage (1.0.0 → 1.0.1 → 1.0.2)
+- ❌ Don't skip gates even if import succeeds
+- ❌ Don't bundle multiple stages into one zip
+
+See `docs/pac-cli-staged-deployment.md` for the full runbook with verify commands per stage.
+
+---
+
+## Path B — Dataverse MCP, Staged Build (when MCP is available)
 
 **Don't ask the AI to create a full enterprise schema in one prompt.** Dataverse MCP (preview) is unstable for long orchestration chains. Failure modes: context overflow, metadata propagation race conditions, hallucinated type enums, choice/lookup/relationship dependency timing.
 
