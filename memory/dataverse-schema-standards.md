@@ -2,40 +2,63 @@
 
 ---
 
-## Two Deployment Paths — Pick By Context
+## Three Deployment Paths — Pick By Context
 
 | Path | Use when... | Trade-offs |
 |---|---|---|
-| **A. PAC CLI staged build (RECOMMENDED for corporate tenants)** | Default for any env. Always works under Conditional Access. Each stage = `pac solution import` of a pre-built stage zip with user approval gates between. | Requires the staged zips (`stage1-shell.zip` / `stage2-tables.zip` / `stage3-relationships.zip`) to be pre-built and shipped with the project. |
+| **A. Maker portal Copilot (PRIMARY for corporate tenants)** | Default. Always works — Copilot runs in user's existing browser session. AI prepares terse structured prompts; user pastes into maker portal's "Start with Copilot"; Copilot creates the artifacts; user validates; AI gives next prompt with approval gate between each. | User must paste prompts manually. Some artifact types (alternate keys, complex views) may need fallback to manual maker portal steps. |
 | **B. Dataverse MCP (staged build)** | User has tenant admin consent + preview MCP enabled. Personal dev tenants. | AI agent does the work conversationally. **Blocked by most corporate tenants** (incl. stlogs.com) because the MCP CLI app needs admin consent. |
-| **C. One-shot `.zip` import (FAST, no wizard)** | Quick deploy when user trusts the example as-is. AI personalizes the complete `.zip` for their publisher/prefix, then one `pac solution import`. | No staged validation gates; user discovers issues only after full deploy. |
+| **C. PAC CLI solution import** | Distributing existing `.zip` artifacts. ALM scenarios. Fast deploy of the example to a clean env. | Re-importing same-env exports fails ("Must specify valid information for parsing"). Best for one-shot fresh deploys via `Personalize-AssetManagement.ps1` + `pac solution import`. |
 
 For both, the schema spec lives in `examples/<app>/dataverse/schema.yaml` as the source of truth.
 
 ---
 
-## Path A — PAC CLI Dynamic Staged Build (default — works in corporate tenants)
+## Path A — Maker Portal Copilot (PRIMARY for corporate tenants)
 
-**The AI agent builds each stage's solution `.zip` dynamically at runtime.** No pre-built stage zips ship in the repo. The source `examples/<app>/dataverse/AssetManagement.zip` is a publisher-agnostic template; each user's deployment generates fresh stage zips under `dist/<app>-<prefix>/staged/` using their own publisher name + prefix.
+**The AI agent prepares terse structured Copilot prompts; the user pastes them into maker portal's "Start with Copilot" feature.** Copilot creates the artifacts natively in the user's existing browser session — no API auth, no CLI auth, no MCP auth.
 
-Why dynamic:
-- Avoids inheriting a foreign publisher (the source's `WeeSiongDev` / `ws_` placeholder)
-- Each user gets clean naming native to their org standards
-- The repo stays portable across teammates with different naming conventions
-- Hardcoded artifacts would break in any env that uses a different prefix
+Why this is the primary path:
+- Runs in the same browser session that already works for `make.powerapps.com` — no Conditional Access friction
+- Publisher prefix is part of the prompt text (literal, e.g. `ws_`), so it's explicit and visible
+- User stays in control — sees Copilot's output and can correct before moving on
+- No XML hand-crafting, no zip building, no version bumping
+- Works for tables + columns + lookups + choices + alternate keys all in one prompt per table
 
-The 6-stage wizard (Stage 0 collects user inputs first):
+The 6-stage wizard:
 
-0. **Collect inputs** — env URL, publisher unique name, publisher display name, prefix, option-value prefix, solution unique name. Stage 0 happens once before any imports.
-1. **Solution shell** — AI generates `dist/<app>-<prefix>/staged/stage1-shell.zip` (empty solution with user's publisher) → `pac solution import` → user approves
-2. **Base tables** (with simple columns + choice + alternate key) — AI generates `stage2-tables.zip` with `<prefix>_*` schema names, no relationships → import → user approves
-3. **Relationships** — AI generates `stage3-relationships.zip` (full solution incl. lookups) → import → user approves
-4. **Views/forms** — manual in maker portal, then `pac solution export` to capture into `dist/` → user approves
-5. **Canvas App** (inside the solution) — user creates empty app in maker portal, AI compiles via canvas-authoring MCP → user approves
-6. **Flows** — placeholder (future work) → final report
+0. **Collect inputs** — publisher unique name, display name, prefix, solution name. The AI uses these to customize the prompt text (substitutes `ws_` if user's prefix is different).
+1. **Solution shell** (manual in maker portal — Copilot doesn't create solutions) — user creates empty solution + publisher → AI verifies via `pac solution list` → user approves
+2. **Tables + schema** (Copilot prompts) — either:
+   - **Flow A:** One combined prompt creates all 3 tables + lookups + choice + alt key
+   - **Flow B:** Three sequential prompts (Asset Category → Asset → Asset Assignment) with approval gate between each
+3. **Verify relationships + alternate key** (visual check in maker portal; relationships were created in Stage 2)
+4. **Views** — one Copilot prompt covers all 5 public views (or fall back to manual)
+5. **Canvas App** (inside the solution) — user creates empty app in maker portal, AI compiles via canvas-authoring MCP
+6. **Flows** — placeholder (future work)
 7. **Final** — `pac solution export` to `dist/<app>-<prefix>/<SolutionName>-complete.zip` (the user's personalized portable artifact)
 
-**The dynamic build per stage** (steps 1–3): AI unpacks the source `AssetManagement.zip` template, applies prefix substitution (`ws_` → user's prefix) + publisher rewrites in `customizations.xml` + `solution.xml`, strips the components that don't belong in this stage, bumps the version, repacks. Each stage is a fresh build from the same source template — never modifies the template itself.
+**The prompt format is intentionally terse:**
+
+```
+Create Dataverse table with prefix ws_, Ownership=Organization, Auditing=On.
+
+Schema: ws_assetcategory
+Display: Asset Category
+Primary: ws_categoryname
+Columns:
+ws_categoryname Text 80 Required
+ws_icon Text 4
+ws_description Memo 500
+```
+
+This format is easier for Copilot to parse than verbose paragraphs, and easier for the user to scan/edit before pasting.
+
+**Full prompts for the asset-management example** live in `examples/asset-management/dataverse/copilot-prompts.md`.
+
+---
+
+## Path B/C — fallback paths
 
 **Critical rules:**
 - ✅ User approval gate between every stage (verify in maker portal first)

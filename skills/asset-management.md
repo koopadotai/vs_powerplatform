@@ -55,30 +55,38 @@ If PAC CLI is not authenticated, guide the user:
 
 ---
 
-## Step 3 — Deploy via PAC CLI 6-stage wizard
+## Step 3 — Deploy via maker portal Copilot 6-stage wizard (PRIMARY PATH)
 
 **This step MUST run before Step 5 (Canvas App).** The Canvas App references Dataverse tables by exact name; deploying canvas first will produce broken bindings.
 
-**Why PAC CLI, not Dataverse MCP:** Dataverse MCP requires tenant admin consent for app `0c412cc3-0dd6-449b-987f-05b053db9457`. Most corporate tenants (e.g. `stlogs.com`) block this consent flow. PAC CLI uses the user's existing browser-authenticated session (same auth as `make.powerapps.com`), which works under Conditional Access.
+**Why maker portal Copilot, not PAC CLI or Dataverse MCP:**
+- Dataverse MCP requires tenant admin consent — blocked by corporate tenants
+- PAC CLI re-import of exported zips fails with vague parsing errors
+- Hand-crafted customizations.xml has too many edge cases for relationships/choices/keys
+- **Maker portal Copilot runs natively in the browser session the user already has — same auth as `make.powerapps.com`, works under Conditional Access**
+
+The AI agent's job in this path: **prepare well-crafted natural-language prompts** that the user pastes into Copilot at maker portal. Copilot creates the table + columns + lookups + choices in one shot. User validates, approves, AI gives next prompt.
+
+**The ready-to-use prompts live in:** [`examples/asset-management/dataverse/copilot-prompts.md`](../examples/asset-management/dataverse/copilot-prompts.md)
 
 **Quick env check:**
 ```powershell
-pac org who                              # confirm correct env + active auth
-pac solution list | Select-String AssetManagement   # check for existing solution
+pac org who                              # confirm correct env + active auth (used for verification + final export only)
 ```
 
 ---
 
-### Path 3-PAC — Dynamic staged build via PAC CLI (corporate-tenant-safe)
+### Path 3-COPILOT — Maker portal Copilot wizard (RECOMMENDED, corporate-tenant-safe)
 
-This is a **strict 6-stage wizard pattern** with mandatory user approval gates between every stage. The AI agent **builds each stage's solution `.zip` dynamically at runtime** based on:
-- `examples/asset-management/dataverse/schema.yaml` (publisher-agnostic source of truth)
-- User-provided publisher name, display name, and prefix (collected at Stage 0)
-- The stage's component subset (defined per stage below)
+This is a **strict 6-stage wizard pattern** with mandatory user approval gates between every stage. The AI agent **prepares Copilot prompts** that the user pastes into Power Apps maker portal's "Start with Copilot" feature. Copilot creates the artifacts; user validates; AI gives next prompt.
 
-**No pre-built stage zips ship in this repo.** Each user's deployment generates fresh, personalized stage zips into `dist/asset-management-<prefix>/staged/`, which are then imported via `pac solution import`. This avoids inheriting any foreign publisher (`WeeSiongDev` / `ws_`) and gives every env a clean, native naming convention.
+**The ready-to-use prompts live in:** [`examples/asset-management/dataverse/copilot-prompts.md`](../examples/asset-management/dataverse/copilot-prompts.md)
 
-**Why PAC CLI not Dataverse MCP:** Dataverse MCP requires tenant admin consent that corporate tenants block. PAC CLI uses standard browser-based auth that's already allowed.
+**Why this path:**
+- No CLI / API / MCP auth issues — runs in the user's existing maker portal browser session
+- User stays in control — sees Copilot's output in real time, can correct immediately
+- Publisher prefix is inherited automatically from the solution the user is INSIDE when running Copilot — no prefix substitution headaches
+- Same auth that already works for `make.powerapps.com` works here
 
 #### Stage 0 — Collect personalization inputs (one-time, before Stage 1)
 
@@ -88,25 +96,25 @@ Before any stage runs, the AI asks (if not already known):
 To deploy asset-management to your env, I need:
   1. Publisher unique name (alphanumeric, no spaces, e.g. "ContosoCorp")
   2. Publisher display name (e.g. "Contoso Corporation")
-  3. Prefix (2-8 lowercase letters, e.g. "ctso") — applied to every table/column
-  4. Option-value prefix (5 digits, default 10000)
+  3. Prefix (2-8 lowercase letters, e.g. "ctso") — Copilot uses this automatically
+     when you create tables from inside your solution
+  4. Solution display name (default "Asset Management")
   5. Solution unique name (default "AssetManagement")
 ```
 
-Validate each before proceeding. Refuse `ws` and `WeeSiongDev` as values (those are the placeholders in the source `.zip`).
+Validate each before proceeding. Refuse `ws` and `WeeSiongDev` as values (those are placeholders from earlier work; using them defeats the personalization).
 
-Store these as session variables for subsequent stages.
+Store these as session variables for use in instructions to the user.
 
 **Critical rules — applied at every stage:**
 
-- ✅ Each stage = AI **dynamically builds** a stage-specific `.zip` then runs ONE `pac solution import` of it
-- ✅ All names are derived from user's Stage-0 inputs — NEVER use hardcoded `ws_*` or `WeeSiongDev` from the source `.zip`
-- ✅ Solution unique name stays the same across stages (user's chosen name); version bumps each stage (1.0.0 → 1.0.1 → 1.0.2 ...)
-- ✅ After every import: AI runs PAC verify commands (`pac solution list`, `pac org list-tables --filter <prefix>_`), then **WAITS for explicit user approval before proceeding to next stage**
-- ❌ NEVER skip a gate — even if the import succeeds, user must validate in maker portal first
-- ❌ NEVER bundle multiple stages into one zip — defeats the wizard pattern's purpose
-- ❌ NEVER reuse hardcoded `ws_` schema names — the dynamic build uses the user's prefix everywhere
-- ❌ NEVER skip Stage 0 — without publisher inputs, the AI doesn't know what names to use
+- ✅ Each stage = AI prepares ONE Copilot prompt → user pastes into maker portal Copilot → user validates → user approves → AI prepares next prompt
+- ✅ Stage prompts come from `copilot-prompts.md` — the AI cites the exact section and gives the user click-to-copy text
+- ✅ User must be INSIDE their solution (Solutions → MySolution → + New → Table → Start with Copilot) so Copilot inherits the publisher prefix
+- ✅ After every paste-and-create: AI tells user exactly what to verify in maker portal, then **WAITS for explicit user approval**
+- ❌ NEVER skip a gate — Copilot can misinterpret a prompt; user validation catches it before the next dependent stage
+- ❌ NEVER paste all prompts at once — later tables depend on earlier ones (Asset has lookup to Asset Category)
+- ❌ NEVER tell user to create a table OUTSIDE the solution (Apps page directly) — it would orphan the table from the solution
 
 #### Stage gate format (use exactly this pattern between every stage)
 
@@ -136,134 +144,96 @@ The AI must STOP after producing the gate. Do not proceed until the user types "
 
 #### The 6 stages
 
-##### Stage 1 — Solution shell (dynamic build + import)
+##### Stage 1 — Solution shell (manual in maker portal — Copilot doesn't create solutions)
 
-**AI dynamically generates `stage1-shell.zip` from Stage-0 inputs:**
+AI tells user (substituting Stage-0 values):
 
-1. Start from the project's source `.zip` as a template: `examples/asset-management/dataverse/AssetManagement.zip`
-2. Unpack to a working folder under `dist/asset-management-<prefix>/build/stage1/`
-3. **Strip all Entity/Relationship content** from `customizations.xml` — leave only the `<ImportExportXml>` skeleton with empty `<Entities />` and `<EntityRelationships />`
-4. **Strip all `<RootComponent>` entries** from `solution.xml` (just the empty shell)
-5. **Rewrite `solution.xml`** with user's Stage-0 values:
-   - `<UniqueName>` → user's solution unique name
-   - `<Publisher><UniqueName>` → user's publisher unique name
-   - `<Publisher><LocalizedName>` → user's publisher display name
-   - `<CustomizationPrefix>` → user's prefix
-   - `<CustomizationOptionValuePrefix>` → user's option-value prefix
-   - `<Version>` → `1.0.0.0`
-6. Repack as `dist/asset-management-<prefix>/staged/stage1-shell.zip`
-7. Import:
+> "Open https://make.powerapps.com → Solutions (left rail) → **+ New solution**. Fill in:
+>   - Display name: `<SolutionDisplayName>`
+>   - Name: `<SolutionUniqueName>` (no spaces)
+>   - Publisher: pick **+ New publisher** → Display name `<PublisherDisplayName>`, Name `<PublisherUniqueName>`, Prefix `<prefix>`
+>   - Click **Save** on publisher, then **Create** on solution
+>
+> You should land inside your new solution's view. Reply 'approved' when done."
 
-```powershell
-pac solution import `
-  --path "dist\asset-management-<prefix>\staged\stage1-shell.zip" `
-  --publish-changes
-```
-
-**Verify:**
+**Verify (optional, via PAC):**
 ```powershell
 pac solution list | Select-String <SolutionUniqueName>
 ```
 
-**User validates in maker portal:** Solutions → "<Display Name>" appears with publisher "<Publisher Display>". Solution is empty.
+**Gate → wait for "approved".**
+
+##### Stage 2 — Schema creation via Copilot
+
+The AI presents the user with the relevant Copilot prompt block from [`copilot-prompts.md`](../examples/asset-management/dataverse/copilot-prompts.md) → Stage 2. Two flows are available:
+
+- **Flow A (one-shot)** — single Copilot prompt creates all 3 tables + lookups + choice set + alternate key in one interaction. Faster but harder to debug if Copilot misinterprets something.
+- **Flow B (staged)** — three sequential Copilot prompts (2a → 2b → 2c) with an approval gate after each. Safer for first-time users.
+
+**Default to Flow B** unless the user explicitly asks for Flow A. AI agent's job:
+
+1. Tell user which flow we're using
+2. Tell user where they should be in maker portal (inside the solution, + New → Table → Start with Copilot)
+3. Paste the exact terse prompt from `copilot-prompts.md`
+4. Tell user what to validate
+5. **WAIT for "approved"** before next prompt
+
+The prompts use `ws_` prefix as a literal placeholder. If the user's prefix is different, the AI must search/replace `ws_` → `<theirprefix>_` and `ws ` → `<theirprefix> ` in the prompt text **before** giving it to the user.
+
+**Format example** (excerpt from copilot-prompts.md Stage 2a):
+
+```
+Create Dataverse table with prefix ws_, Ownership=Organization, Auditing=On.
+
+Schema: ws_assetcategory
+Display: Asset Category
+Primary: ws_categoryname
+Columns:
+ws_categoryname Text 80 Required
+ws_icon Text 4
+ws_description Memo 500
+```
+
+**Gate → wait for "approved" after each sub-stage (or one approval after Flow A's single paste).**
+
+##### Stage 3 — Verify relationships + alternate key
+
+Relationships and the alternate key were created as part of Stage 2 (lookups embedded in the table prompts; alternate key in the Asset prompt). This stage is verification only:
+
+AI tells the user:
+> "In maker portal:
+>  1. Tables → ws_asset → Relationships — confirm 1:N to Asset Assignment + N:1 lookups to Asset Category + User
+>  2. Tables → ws_assetassignment → Relationships — confirm N:1 lookups to Asset + User
+>  3. Tables → ws_asset → Keys — confirm 'Serial Number (Unique)' is **Active** (not Pending)
+>
+> Reply 'approved' when all check out."
+
+If any relationship is missing, the AI provides a follow-up Copilot prompt to add it:
+
+```
+Add a 1:N relationship from ws_<parent> to ws_<child>:
+- Lookup column on ws_<child>: ws_<lookupname>
+- Required: <yes/no>
+- Cascade behavior: <Restrict|RemoveLink|NoCascade>
+```
 
 **Gate → wait for "approved".**
 
-##### Stage 2 — Base tables (dynamic build + import)
+##### Stage 4 — Views (Copilot or manual)
 
-**AI dynamically generates `stage2-tables.zip` from `schema.yaml` + Stage-0 inputs:**
+The AI presents the Stage 4 prompt from `copilot-prompts.md` — a single block defining all 5 views in compact format. User pastes; if Copilot succeeds, all 5 views are created.
 
-1. Start from the source `AssetManagement.zip` as a template (it already has the 3 entities defined correctly)
-2. Unpack to `dist/asset-management-<prefix>/build/stage2/`
-3. **In `customizations.xml`:** Apply prefix substitution `ws_` → `<prefix>_` everywhere (entity schemas, attribute names, choice optionset names, alternate key names)
-4. **Strip the `<EntityRelationships>` content** — relationships go in Stage 3
-5. **Strip relationship-related `<RootComponent>` entries** from `solution.xml` (keep only entity root components)
-6. **In `solution.xml`:**
-   - Apply prefix + publisher rewrites (same as Stage 1)
-   - Bump `<Version>` to `1.0.1.0`
-7. Repack as `dist/asset-management-<prefix>/staged/stage2-tables.zip`
-8. Import:
+If Copilot can't handle views, fall back to manual creation in maker portal: Tables → ws_asset → Views → + New view (4 times for ws_asset, 1 time for ws_assetassignment).
 
-```powershell
-pac solution import `
-  --path "dist\asset-management-<prefix>\staged\stage2-tables.zip" `
-  --publish-changes
-```
-
-**What this adds (upgrade to v1.0.1):**
-- 3 tables (with `<prefix>_` names): asset category, asset, asset assignment
-- All simple columns (text / date / number / memo / currency) per `schema.yaml`
-- Choice set `<prefix>_assetstatus` + `<prefix>_status` Choice column
-- Alternate key `<prefix>_asset_serialnumber_key`
-- **NO lookups, NO relationships** — come in Stage 3
-
-**Verify:**
-```powershell
-pac org list-tables --filter <prefix>_              # expect 3 tables
-pac solution list | Select-String <SolutionName>    # expect version 1.0.1
-```
-
-**User validates in maker portal:** AssetManagement → Tables shows all 3 tables. Click `<prefix>_asset` → Columns and confirm Status (Choice), Serial Number, Purchase Date, etc. Click `<prefix>_asset` → Keys to confirm alternate key.
-
-**Gate → wait for "approved".**
-
-##### Stage 3 — Relationships (dynamic build + import)
-
-**AI dynamically generates `stage3-relationships.zip`:**
-
-1. Start from the full source `AssetManagement.zip` (which has everything)
-2. Unpack to `dist/asset-management-<prefix>/build/stage3/`
-3. **In `customizations.xml`:** Apply prefix substitution `ws_` → `<prefix>_` (same as Stage 2)
-4. **Keep the `<EntityRelationships>` content** (4 relationships)
-5. **In `solution.xml`:** Apply prefix + publisher rewrites, bump `<Version>` to `1.0.2.0`
-6. Repack as `dist/asset-management-<prefix>/staged/stage3-relationships.zip`
-7. Import:
-
-```powershell
-pac solution import `
-  --path "dist\asset-management-<prefix>\staged\stage3-relationships.zip" `
-  --publish-changes
-```
-
-**What this adds (upgrade to v1.0.2):**
-1. `<prefix>_assetcategory` → `<prefix>_asset` (required, Restrict — `<prefix>_categoryid` lookup)
-2. `<prefix>_asset` → `<prefix>_assetassignment` (required, RemoveLink — `<prefix>_assetid` lookup)
-3. `SystemUser` → `<prefix>_asset` (optional, NoCascade — `<prefix>_assignedto` lookup)
-4. `SystemUser` → `<prefix>_assetassignment` (required, NoCascade — `<prefix>_assignedto` lookup)
-
-**Verify:**
-```powershell
-pac solution list | Select-String <SolutionName>   # expect version 1.0.2
-```
-
-**User validates in maker portal:** each table → Relationships shows the 4 new lookups. The `Category` column on Asset is now a Lookup (not Text).
-
-**Gate → wait for "approved".**
-
-##### Stage 4 — Views/forms (manual via maker portal, then export to capture)
-
-PAC CLI has no "create view" command. This stage is **manual but supervised**:
-
-The AI tells the user to add the 5 public views from `schema.yaml` lines 112-148 in maker portal:
-1. **Available Assets** (on ws_asset) — filter `ws_status eq 100000000`
-2. **My Assigned Assets** (on ws_asset) — filter `ws_assignedto eq {currentUser} and ws_status eq 100000001`
-3. **Out of Warranty** (on ws_asset) — filter `ws_warrantyend lt {today}`
-4. **Recently Assigned** (on ws_asset) — filter `ws_assigneddate gt {today-30d}`
-5. **Active Assignments** (on ws_assetassignment) — filter `ws_assignedto_dt eq null`
-
-Steps in maker portal: AssetManagement → Tables → ws_asset → Views → + New view (repeat 4 times for ws_asset, then once on ws_assetassignment).
-
-After the user adds them, the AI captures into a personalized snapshot:
+After views are created, AI captures into a personalized snapshot:
 ```powershell
 pac solution export `
   --name <SolutionName> `
-  --path "dist\asset-management-<prefix>\<SolutionName>-final.zip" `
+  --path "dist\asset-management-<prefix>\<SolutionName>-with-views.zip" `
   --managed false --overwrite
 ```
 
-> **Important:** the export goes into `dist/`, NOT back into `examples/`. The source `examples/asset-management/dataverse/AssetManagement.zip` stays publisher-agnostic for future users.
-
-User validates: 5 views visible across the two tables.
+> The export goes into `dist/`, NOT into `examples/`. The source template stays publisher-agnostic.
 
 **Gate → wait for "approved".**
 
